@@ -1,72 +1,77 @@
 from operator import sub
+import sys
 import pygame as pg
 import math 
+import socket
+import struct
 
 
 #Tamanho da janela
 WIDTH = 1280
 HEIGHT = 720
-TICKRATE = 15
+TICKRATE = 12
 
 
-'''
-#Rodar triangulo
-def rotate_triangle(triangle,ang):
-    pivot = ((triangle[0][0] + triangle[1][0] + triangle[2][0]) / 3, (triangle[0][1] + triangle[1][1] + triangle[2][1]) / 3)
-    
-    triangle[0] = rotate_point(pivot, triangle[0], ang)
-    triangle[1] = rotate_point(pivot, triangle[1], ang)
-    triangle[2] = rotate_point(pivot, triangle[2], ang)
-
-    return triangle
 
 
-def rotate_point(pivot,point,ang):
-    s = math.sin(ang * (math.pi/180))
-    c = math.cos(ang * (math.pi/180))
-    
-    a,b = point
 
-    #Ponto para a origem
-    a -= int(pivot[0])
-    b -= int(pivot[1])
-
-    #Rodar
-    newX = a * c - b * s
-    newY = a * s + b * c
-
-    #Ponto para o local inicial
-    a += int(newX) + int(pivot[0])
-    b += int(newY) + int(pivot[1])
-
-    return (a,b)
-    
-tr = [(0,0),(0,2),(2,1)]
-
-print(rotate_triangle(tr,90))
-'''
-
-'''def debug(self):
-        print(self)
-        keys = pg.key.get_pressed()
-        print("keys pressed")
-        for key in keys:
-            print(key)
-'''
 
 #Lista para guardar os tiros
 shots = []
 
 #Cores
-black = (0,0,0)
-grey = (128,128,128)
-white = (255,255,255)
-red = (255,0,0)
-lime = (0,255,0)
-blue = (0,0,255)
-yellow = (255,255,0)
-cyan = (0,255,255)
-magenta = (255,0,255)
+black = (0,0,0) #1
+grey = (128,128,128) #2
+white = (255,255,255) #3
+red = (255,0,0) #4
+lime = (0,255,0) #5
+blue = (0,0,255) #6
+yellow = (255,255,0) #7
+cyan = (0,255,255) #8
+magenta = (255,0,255) #9
+
+def encode_color(color):
+    if color == black:
+        return 1
+    if color == grey:
+        return 2
+    if color == white:
+        return 3
+    if color == red:
+        return 4
+    if color == lime:
+        return 5
+    if color == blue:
+        return 6
+    if color == yellow:
+        return 7
+    if color == cyan:
+        return 8
+    if color == magenta:
+        return 9
+
+def decode_color(color):
+    if color == 1:
+        return black         
+    if color == 2:
+        return grey
+    if color == 3:
+        return white
+    if color == 4:
+        return red
+    if color == 5:
+        return lime
+    if color == 6:
+        return blue
+    if color == 7:
+        return yellow
+    if color == 8:
+        return cyan
+    if color == 9:
+        return magenta
+         
+
+
 
 def generate_triangle(center,width,height,angle):
     x,y = center
@@ -93,17 +98,17 @@ def generate_triangle(center,width,height,angle):
 
 
 #Player tunes
-pWidth = 32
-pHeight = 48
+pWidth = 48
+pHeight = 32
 pAcc = 0.35*(60/TICKRATE)
 pShieldCooldown = int(120*(TICKRATE/60))
 pShieldActive = int(80*(TICKRATE/60))
-pShotCooldown = int(180*(TICKRATE/60))
-pDefaultHealth = int(100)
-pDefaultRotation = int(2*(60/TICKRATE))
+pShotCooldown = int(100*(TICKRATE/60))
+pDefaultHealth = 100
+pDefaultRotation = 3*(60/TICKRATE)
 sDefaultVel = int(10*(60/TICKRATE))
-sDefaultTTL = int(120*(TICKRATE/60))
-sDefaultSize = int(30)
+sDefaultTTL = int(150*(TICKRATE/60))
+sDefaultSize = 30
 
 
 class Shot():
@@ -121,6 +126,10 @@ class Shot():
         self.b = (self.x + self.size*math.cos(self.ang),self.y + self.size*math.sin(self.ang))
 
         shots.append(self)
+
+    def toString(self):
+        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(encode_color(self.color)) + ':'
+
 
     def move(self):
         self.x += self.vel*math.cos(self.ang)
@@ -160,11 +169,11 @@ class Shot():
 
 
 class Player(pg.sprite.Sprite):
-    def __init__(self,x,y,w,h,color):
+    def __init__(self,x,y,color):
         self.x = x
         self.y = y
-        self.w = w
-        self.h = h
+        self.w = pWidth
+        self.h = pHeight
         self.color = color
 
         self.shield = False
@@ -180,6 +189,14 @@ class Player(pg.sprite.Sprite):
         self.ang = 0
 
         self.triangle = generate_triangle((self.x,self.y), self.w, self.h, self.ang)
+
+
+
+    def toString(self):    
+        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(encode_color(self.color)) + ',' + str(self.health) + '_'
+
+
+
 
     def draw(self, win):
         self.triangle = generate_triangle((self.x,self.y), self.w, self.h, self.ang)
@@ -200,11 +217,7 @@ class Player(pg.sprite.Sprite):
 
         pg.draw.polygon(win, self.color, self.triangle, fill)
 
-    '''
-        invColor = tuple(map(sub, white, self.color))
-        self.triangle = generate_triangle((self.x,self.y), self.w+4, self.h+4, self.ang)
-        pg.draw.polygon(win, invColor, self.triangle, 4)
-    '''
+
 
     def drag(self):
         self.velX *= 0.92
@@ -302,9 +315,31 @@ def redraw_win(win,player):
     pg.display.flip()
 
 def main():
+    packetID = 0
+
+
+    if not len(sys.argv) == 3:
+        print("Wrong Call!")
+        exit()
+    
+
+    serverIPv6 = sys.argv[2]  # localhost
+    serverPort = 5555
+    iter = 0
+    MESSAGE = "abcd  " + str(iter)
+    
+    clientIPv6 = "::1"
+    clientPort = int(sys.argv[1])
+
+    inSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    inSock.bind((clientIPv6, clientPort))
+    
+    outSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+
+
     run = True
 
-    p = Player(50,50,pHeight,pWidth,lime)
+    p = Player(50,50,blue)
     clock = pg.time.Clock()
 
 
@@ -317,9 +352,15 @@ def main():
 
         if not run: break
 
+        p.update()
+        MESSAGE = str(packetID) + " " + p.toString()
         for s in shots:
             s.update()
-        p.update()
+            MESSAGE += s.toString()
+
+
         redraw_win(win,p)
+        outSock.sendto(MESSAGE.encode("utf-8"), (serverIPv6, serverPort))
+        packetID += 1
 
 main()
