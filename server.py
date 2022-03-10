@@ -29,7 +29,7 @@ while True:
     
     try:
         data,addr = sock.recvfrom(1024)
-    except TimeoutError:
+    except:
         print("Server timed out (10s)")
         exit()
 
@@ -39,9 +39,15 @@ while True:
     playerStr,shotsStr = decoded.split('_')
     shotsStr = shotsStr.split(':')
 
+
+
+    shots[p.color] = []
+    for s in shotsStr:
+        if len(s) > 2:
+            shots[p.color].append(util.Shot(s))
+
     p = util.Player(playerStr,addr)
     players[p.color] = p
-    shots[p.color] = []
 
     currTime = datetime.utcnow()
 
@@ -59,18 +65,15 @@ while True:
         playersInfo[p.color]['curr'] = int(packetID)
         playersInfo[p.color]['lost'] += playersInfo[p.color]['curr'] - playersInfo[p.color]['last'] - 1
 
-        
-    if playersInfo[p.color]['curr'] - playersInfo[p.color]['lastPrinted'] >= 100:
-        playersInfo[p.color]['lastPrinted'] = playersInfo[p.color]['curr']
-        lossPerc = playersInfo[p.color]['lost']/(playersInfo[p.color]['curr'] - playersInfo[p.color]['first'] + 1)
-        print("Player ", p.color, " current packetID: ", packetID)
-        print("Player ", p.color, " lost ", playersInfo[p.color]['lost'], " packets so far (" , lossPerc , "%)") 
+        if playersInfo[p.color]['curr'] - playersInfo[p.color]['lastPrinted'] >= 100:
+            playersInfo[p.color]['lastPrinted'] = playersInfo[p.color]['curr']
+            lossPerc = playersInfo[p.color]['lost']/(playersInfo[p.color]['curr'] - playersInfo[p.color]['first'])
+            print("Player ", p.color, " current packetID: ", packetID)
+            print("Player ", p.color, " lost ", playersInfo[p.color]['lost'], " packets so far (" , lossPerc , "%)") 
+    
+    
 
 
-
-    for s in shotsStr:
-        if len(s) > 2:
-            shots[p.color].append(util.Shot(s))
 
 
     timedOut = []
