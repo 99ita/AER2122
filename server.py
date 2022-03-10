@@ -1,6 +1,8 @@
 import socket
+from struct import pack
 import util
 import sys
+from datetime import datetime
 
 #Message
 
@@ -8,7 +10,7 @@ import sys
 #Data
 shots = {}
 players = {}
-playersLoss = {}
+playersInfo = {}
 
 
 if not len(sys.argv) == 2:
@@ -23,9 +25,15 @@ sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 sock.bind((ipv6, port))
 
 while True:
-    data,addr = sock.recvfrom(1024)
+    sock.settimeout(10)
+    
+    try:
+        data,addr = sock.recvfrom(1024)
+    except TimeoutError:
+        print("Server timed out (10s)")
+        exit()
+
     decoded = data.decode("utf-8")
-    print(decoded)
     
     packetID,decoded = decoded.split(' ')
     playerStr,shotsStr = decoded.split('_')
@@ -35,17 +43,44 @@ while True:
     players[p.color] = p
     shots[p.color] = []
 
-    if not p.color in playersLoss:
-        playersLoss[p.color] = {}
-        playersLoss[p.color]['curr'] = int(packetID)
-        playersLoss[p.color]['lost'] = 0
+    currTime = datetime.utcnow()
+
+    if not p.color in playersInfo:
+        print("Player ", p.color, " session initiated...")
+        playersInfo[p.color] = {}
+        playersInfo[p.color]['lastPrinted'] = -10000
+        playersInfo[p.color]['first'] = int(packetID)
+        playersInfo[p.color]['lastTime'] = currTime
+        playersInfo[p.color]['curr'] = int(packetID)
+        playersInfo[p.color]['lost'] = 0
     else:
-        playersLoss[p.color]['last'] = playersLoss[p.color]['curr']
-        playersLoss[p.color]['curr'] = int(packetID)
-        playersLoss[p.color]['lost'] += playersLoss[p.color]['curr'] - playersLoss[p.color]['last'] - 1
-        #print("Player ", p.color, " packets lost: ", playersLoss[p.color]['lost'])
+        playersInfo[p.color]['lastTime'] = currTime
+        playersInfo[p.color]['last'] = playersInfo[p.color]['curr']
+        playersInfo[p.color]['curr'] = int(packetID)
+        playersInfo[p.color]['lost'] += playersInfo[p.color]['curr'] - playersInfo[p.color]['last'] - 1
+
+        
+    if playersInfo[p.color]['curr'] - playersInfo[p.color]['lastPrinted'] >= 100:
+        playersInfo[p.color]['lastPrinted'] = playersInfo[p.color]['curr']
+        lossPerc = playersInfo[p.color]['lost']/(playersInfo[p.color]['curr'] - playersInfo[p.color]['first'] + 1)
+        print("Player ", p.color, " current packetID: ", packetID)
+        print("Player ", p.color, " lost ", playersInfo[p.color]['lost'], " packets so far (" , lossPerc , "%)") 
+
+
 
     for s in shotsStr:
         if len(s) > 2:
-            shots[addr].append(util.Shot(s))
+            shots[p.color].append(util.Shot(s))
 
+
+    timedOut = []
+    for key in playersInfo.keys():
+        if (currTime-playersInfo[key]['lastTime']).total_seconds() > 10:
+            timedOut.append(key)
+
+    for k in timedOut:
+        del players[k]
+        del shots[k]
+        del playersInfo[k]
+        print("\n\n\n\n\n\n\n\nPlayer ", players[key].color, " session timed out (10s)...")
+            

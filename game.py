@@ -7,9 +7,9 @@ import struct
 
 
 #Tamanho da janela
-WIDTH = 1280
-HEIGHT = 720
-TICKRATE = 12
+WIDTH = 860
+HEIGHT = 640
+TICKRATE = 30
 
 
 
@@ -69,7 +69,6 @@ def decode_color(color):
         return cyan
     if color == 9:
         return magenta
-         
 
 
 
@@ -318,7 +317,7 @@ def main():
     packetID = 0
 
 
-    if not len(sys.argv) == 3:
+    if not len(sys.argv) == 4:
         print("Wrong Call!")
         exit()
     
@@ -339,7 +338,7 @@ def main():
 
     run = True
 
-    p = Player(50,50,blue)
+    p = Player(50,50,decode_color(int(sys.argv[3])))
     clock = pg.time.Clock()
 
 
