@@ -6,95 +6,6 @@ import socket
 import util
 
 
-#Tamanho da janela
-WIDTH = 860
-HEIGHT = 640
-TICKRATE = 5
-
-#Lista para guardar os tiros
-shots = []
-
-
-def encode_color(color):
-    if color == util.black:
-        return 1
-    if color == util.grey:
-        return 2
-    if color == util.white:
-        return 3
-    if color == util.red:
-        return 4
-    if color == util.lime:
-        return 5
-    if color == util.blue:
-        return 6
-    if color == util.yellow:
-        return 7
-    if color == util.cyan:
-        return 8
-    if color == util.magenta:
-        return 9
-
-def decode_color(color):
-    if color == 1:
-        return util.black         
-    if color == 2:
-        return util.grey
-    if color == 3:
-        return util.white
-    if color == 4:
-        return util.red
-    if color == 5:
-        return util.lime
-    if color == 6:
-        return util.blue
-    if color == 7:
-        return util.yellow
-    if color == 8:
-        return util.cyan
-    if color == 9:
-        return util.magenta
-
-
-
-def generate_triangle(center,width,height,angle):
-    x,y = center
-    w = int(width/2)
-    h = int(height/2)
-
-
-    alpha = angle * (math.pi/180)
-    beta = (angle + 90) * (math.pi/180)
-
-    xx = x - math.cos(alpha)*w
-    yy = y - math.sin(alpha)*w
-
-    aX = xx - math.cos(beta)*h
-    aY = yy - math.sin(beta)*h
-    
-    bX = xx + math.cos(beta)*h
-    bY = yy + math.sin(beta)*h
-
-    cX = x + math.cos(alpha)*w
-    cY = y + math.sin(alpha)*w
-
-    return [(aX,aY), (bX,bY), (cX,cY)]
-
-
-#Player tunes
-pWidth = 48
-pHeight = 32
-pAcc = 0.35*(60/TICKRATE)
-pShieldCooldown = int(120*(TICKRATE/60))
-pShieldActive = int(80*(TICKRATE/60))
-pShotCooldown = int(100*(TICKRATE/60))
-pDefaultHealth = 100
-pDefaultRotation = 3*(60/TICKRATE)
-sDefaultVel = int(10*(60/TICKRATE))
-sDefaultTTL = int(150*(TICKRATE/60))
-sDefaultSize = 30
-
-
 class Shot():
     def __init__(self,x,y,ang,color):
         self.x = x
@@ -102,9 +13,9 @@ class Shot():
         self.ang = ang * (math.pi/180)
         self.color = color
 
-        self.vel = sDefaultVel
-        self.ttl = sDefaultTTL
-        self.size = sDefaultSize
+        self.vel = util.sDefaultVel
+        self.ttl = util.sDefaultTTL
+        self.size = util.sDefaultSize
         
         self.a = (self.x,self.y)
         self.b = (self.x + self.size*math.cos(self.ang),self.y + self.size*math.sin(self.ang))
@@ -112,7 +23,7 @@ class Shot():
         shots.append(self)
 
     def toString(self):
-        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(encode_color(self.color)) + ':'
+        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ':'
 
 
     def move(self):
@@ -172,18 +83,18 @@ class Player(pg.sprite.Sprite):
         self.velY = 0
         self.ang = 0
 
-        self.triangle = generate_triangle((self.x,self.y), self.w, self.h, self.ang)
+        self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
 
 
 
     def toString(self):    
-        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(encode_color(self.color)) + ',' + str(self.health) + '_'
+        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.health) + '_'
 
 
 
 
     def draw(self, win):
-        self.triangle = generate_triangle((self.x,self.y), self.w, self.h, self.ang)
+        self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
 
         _,_,c = self.triangle
 
@@ -237,29 +148,29 @@ class Player(pg.sprite.Sprite):
             self.velY += self.acc*(math.sin(self.ang * (math.pi/180)))
 
         if keys[pg.K_a]:
-            if self.ang - pDefaultRotation < -180:
-                self.ang = 180 - (pDefaultRotation - (self.ang + 180))
+            if self.ang - util.pDefaultRotation < -180:
+                self.ang = 180 - (util.pDefaultRotation - (self.ang + 180))
             else:
-                self.ang -= pDefaultRotation
+                self.ang -= util.pDefaultRotation
 
         if keys[pg.K_s]:
             self.velX -= self.acc*(math.cos(self.ang * (math.pi/180)))
             self.velY -= self.acc*(math.sin(self.ang * (math.pi/180)))
 
         if keys[pg.K_d]:             
-            if self.ang + pDefaultRotation > 180:
-                self.ang = -180 + (pDefaultRotation - (180 - self.ang))
+            if self.ang + util.pDefaultRotation > 180:
+                self.ang = -180 + (util.pDefaultRotation - (180 - self.ang))
             else:
-                self.ang += pDefaultRotation
+                self.ang += util.pDefaultRotation
 
         if keys[pg.K_e]:
             if self.shieldCooldown == 0 and not self.shield:
                 self.shield = True
-                self.shieldCooldown = pShieldActive
+                self.shieldCooldown = util.pShieldActive
 
         if keys[pg.K_SPACE]:
             if self.shotCooldown == 0:
-                self.shotCooldown = pShotCooldown
+                self.shotCooldown = util.pShotCooldown
                 x,y = self.triangle[2]
                 Shot(x,y,self.ang,self.color)
 
@@ -277,14 +188,17 @@ class Player(pg.sprite.Sprite):
         if self.shotCooldown > 0:
             self.shotCooldown -= 1
         
-        self.triangle = generate_triangle((self.x,self.y), self.w, self.h, self.ang)
+        self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
 
 
 
 
 
+
+#Lista para guardar os tiros
+shots = []
 #Definições do display 
-win = pg.display.set_mode((WIDTH,HEIGHT))
+win = pg.display.set_mode((util.WIDTH,util.HEIGHT))
 pg.display.set_caption("KSD")
 background = util.black
 #all_sprite = pg.sprite.Group
@@ -319,7 +233,7 @@ def main():
 
     run = True
 
-    p = Player(50,50,decode_color(int(sys.argv[3])))
+    p = Player(50,50,util.decode_color(int(sys.argv[3])))
     clock = pg.time.Clock()
 
 
