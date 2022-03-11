@@ -3,72 +3,57 @@ import sys
 import pygame as pg
 import math 
 import socket
-import struct
+import util
 
 
 #Tamanho da janela
 WIDTH = 860
 HEIGHT = 640
-TICKRATE = 30
-
-
-
-
-
+TICKRATE = 5
 
 #Lista para guardar os tiros
 shots = []
 
-#Cores
-black = (0,0,0) #1
-grey = (128,128,128) #2
-white = (255,255,255) #3
-red = (255,0,0) #4
-lime = (0,255,0) #5
-blue = (0,0,255) #6
-yellow = (255,255,0) #7
-cyan = (0,255,255) #8
-magenta = (255,0,255) #9
 
 def encode_color(color):
-    if color == black:
+    if color == util.black:
         return 1
-    if color == grey:
+    if color == util.grey:
         return 2
-    if color == white:
+    if color == util.white:
         return 3
-    if color == red:
+    if color == util.red:
         return 4
-    if color == lime:
+    if color == util.lime:
         return 5
-    if color == blue:
+    if color == util.blue:
         return 6
-    if color == yellow:
+    if color == util.yellow:
         return 7
-    if color == cyan:
+    if color == util.cyan:
         return 8
-    if color == magenta:
+    if color == util.magenta:
         return 9
 
 def decode_color(color):
     if color == 1:
-        return black         
+        return util.black         
     if color == 2:
-        return grey
+        return util.grey
     if color == 3:
-        return white
+        return util.white
     if color == 4:
-        return red
+        return util.red
     if color == 5:
-        return lime
+        return util.lime
     if color == 6:
-        return blue
+        return util.blue
     if color == 7:
-        return yellow
+        return util.yellow
     if color == 8:
-        return cyan
+        return util.cyan
     if color == 9:
-        return magenta
+        return util.magenta
 
 
 
@@ -81,17 +66,17 @@ def generate_triangle(center,width,height,angle):
     alpha = angle * (math.pi/180)
     beta = (angle + 90) * (math.pi/180)
 
-    xx = int(x - math.cos(alpha)*w)
-    yy = int(y - math.sin(alpha)*w)
+    xx = x - math.cos(alpha)*w
+    yy = y - math.sin(alpha)*w
 
-    aX = int(xx - math.cos(beta)*h)
-    aY = int(yy - math.sin(beta)*h)
+    aX = xx - math.cos(beta)*h
+    aY = yy - math.sin(beta)*h
     
-    bX = int(xx + math.cos(beta)*h)
-    bY = int(yy + math.sin(beta)*h)
+    bX = xx + math.cos(beta)*h
+    bY = yy + math.sin(beta)*h
 
-    cX = int(x + math.cos(alpha)*w)
-    cY = int(y + math.sin(alpha)*w)
+    cX = x + math.cos(alpha)*w
+    cY = y + math.sin(alpha)*w
 
     return [(aX,aY), (bX,bY), (cX,cY)]
 
@@ -134,14 +119,14 @@ class Shot():
         self.x += self.vel*math.cos(self.ang)
         self.y += self.vel*math.sin(self.ang)
         
-        if self.x > WIDTH:
-            self.x -= WIDTH
+        if self.x > util.WIDTH:
+            self.x -= util.WIDTH
         
-        if self.y > HEIGHT:
+        if self.y > util.HEIGHT:
             shots.remove(self)
 
         if self.x < 0:
-            self.x = WIDTH + self.x
+            self.x = util.WIDTH + self.x
 
         if self.y < 0:
             shots.remove(self)
@@ -171,18 +156,18 @@ class Player(pg.sprite.Sprite):
     def __init__(self,x,y,color):
         self.x = x
         self.y = y
-        self.w = pWidth
-        self.h = pHeight
+        self.w = util.pWidth
+        self.h = util.pHeight
         self.color = color
 
         self.shield = False
-        self.shieldCooldown = pShieldCooldown
+        self.shieldCooldown = util.pShieldCooldown
 
-        self.shotCooldown = pShotCooldown
+        self.shotCooldown = util.pShotCooldown
 
-        self.health = pDefaultHealth
+        self.health = util.pDefaultHealth
 
-        self.acc = pAcc
+        self.acc = util.pAcc
         self.velX = 0
         self.velY = 0
         self.ang = 0
@@ -200,7 +185,7 @@ class Player(pg.sprite.Sprite):
     def draw(self, win):
         self.triangle = generate_triangle((self.x,self.y), self.w, self.h, self.ang)
 
-        a,b,c = self.triangle
+        _,_,c = self.triangle
 
         if self.shield:
             fill = 0
@@ -212,7 +197,7 @@ class Player(pg.sprite.Sprite):
                 #pg.draw.circle(win,self.color,b,4)
 
         if self.shotCooldown == 0:
-            pg.draw.circle(win,grey,c,4)
+            pg.draw.circle(win,util.grey,c,4)
 
         pg.draw.polygon(win, self.color, self.triangle, fill)
 
@@ -227,14 +212,14 @@ class Player(pg.sprite.Sprite):
         self.x += self.velX
         self.y += self.velY
         
-        if self.x > WIDTH:
-            self.x -= WIDTH
+        if self.x > util.WIDTH:
+            self.x -= util.WIDTH
         
-        if self.y > HEIGHT:
-            self.y = HEIGHT
+        if self.y > util.HEIGHT:
+            self.y = util.HEIGHT
 
         if self.x < 0:
-            self.x = WIDTH + self.x
+            self.x = util.WIDTH + self.x
 
         if self.y < 0:
             self.y = 0#HEIGHT + self.y
@@ -287,7 +272,7 @@ class Player(pg.sprite.Sprite):
             self.shieldCooldown -= 1
         if self.shieldCooldown == 0 and self.shield:
             self.shield = False
-            self.shieldCooldown = pShieldCooldown
+            self.shieldCooldown = util.pShieldCooldown
 
         if self.shotCooldown > 0:
             self.shotCooldown -= 1
@@ -301,10 +286,8 @@ class Player(pg.sprite.Sprite):
 #Definições do display 
 win = pg.display.set_mode((WIDTH,HEIGHT))
 pg.display.set_caption("KSD")
-background = black
+background = util.black
 #all_sprite = pg.sprite.Group
-
-
 
 def redraw_win(win,player):
     win.fill(background)
@@ -322,16 +305,14 @@ def main():
         exit()
     
 
-    serverIPv6 = sys.argv[2]  # localhost
+    serverIPv6 = sys.argv[1]  
     serverPort = 5555
-    iter = 0
-    MESSAGE = "abcd  " + str(iter)
     
     clientIPv6 = "::1"
-    clientPort = int(sys.argv[1])
+    clientPort = int(sys.argv[2])
 
     inSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-    inSock.bind((clientIPv6, clientPort))
+    #inSock.bind((clientIPv6, clientPort))
     
     outSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 
@@ -343,7 +324,7 @@ def main():
 
 
     while run:
-        clock.tick(TICKRATE)
+        clock.tick(util.TICKRATE)
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 run = False
@@ -352,14 +333,14 @@ def main():
         if not run: break
 
         p.update()
-        MESSAGE = str(packetID) + " " + p.toString()
+        message = str(clientPort) + " " + str(packetID) + " " + p.toString()
         for s in shots:
             s.update()
-            MESSAGE += s.toString()
+            message += s.toString()
 
 
         redraw_win(win,p)
-        outSock.sendto(MESSAGE.encode("utf-8"), (serverIPv6, serverPort))
+        outSock.sendto(message.encode("utf-8"), (serverIPv6, serverPort))
         packetID += 1
 
 main()

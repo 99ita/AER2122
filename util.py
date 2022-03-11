@@ -1,9 +1,61 @@
-from ctypes.wintypes import PHANDLE
-from re import S
-import struct
 import math
+import argparse
+
+#Colors
+black = (0,0,0) #1
+grey = (128,128,128) #2
+white = (255,255,255) #3
+red = (255,0,0) #4
+lime = (0,255,0) #5
+blue = (0,0,255) #6
+yellow = (255,255,0) #7
+cyan = (0,255,255) #8
+magenta = (255,0,255) #9
+
+#Player constants
 
 
+
+
+def client():
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('id',
+                        help='Player ID',
+                        type=int)
+    parser.add_argument('-s', 
+                        metavar=('ip','port'),
+                        help='Server IP(v6) and port',
+                        type=str,
+                        nargs=2,
+                        default=['::1','5555'])
+    parser.add_argument('-c',
+                        metavar=('ip','port'),
+                        help='Client IP(v6) and port',
+                        type=str,
+                        nargs=2,
+                        default=['::1','5556'])
+    a = parser.parse_args()
+    
+    return a.id,a.s[0],int(a.s[1]),a.c[0],int(a.c[1])
+    
+def server():
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-s', 
+                        metavar=('ip','port'),
+                        help='Server IP(v6) and port',
+                        type=str,
+                        nargs=2,
+                        default=['::1','5555'])
+    parser.add_argument('-t',
+                        metavar='seconds',
+                        help='Timeout',
+                        type=int,
+                        nargs=1,
+                        default=10)
+
+    a = parser.parse_args()
+    
+    return a.s[0],int(a.s[1]),a.t
 
 #Player tunes
 pWidth = 48
@@ -62,14 +114,14 @@ class Shot():
         self.x2 = self.x1 + sDefaultSize*math.cos(self.ang)
         self.y2 = self.y1 + sDefaultSize*math.sin(self.ang)
     
-    def encode(self):
-        return self.x1 + ',' + self.y1 + ',' + self.ang + ',' + self.color + self.shotId + ':'
+    def toString(self):
+        return self.x1 + ',' + self.y1 + ',' + self.ang + ',' + self.color + '_'
 
 
 
 
 class Player():
-    def __init__(self,data,addr):
+    def __init__(self,data,addr,port):
         aux = data.split(',')
         self.x = float(aux[0])
         self.y = float(aux[1])
@@ -78,8 +130,9 @@ class Player():
         self.health = int(aux[4])
         self.triangle = generate_triangle((self.x,self.y), pWidth, pHeight, self.ang)
         self.addr = addr
+        self.port = port
 
-    def encode(self):
+    def toString(self):
         return self.x + ',' + self.y + ',' + self.ang + ',' + self.color + ',' + self.health + '_'
 
 
