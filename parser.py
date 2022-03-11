@@ -19,7 +19,7 @@ def client():
                         default=['::1','5556'])
     a = parser.parse_args()
     
-    return a.id,a.s[0],int(a.s[1]),a.c[0],int(a.c[1])
+    return a.id,(a.s[0],int(a.s[1])),(a.c[0],int(a.c[1]))
     
 def server():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
