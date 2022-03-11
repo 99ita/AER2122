@@ -23,6 +23,7 @@ class Shot():
 
         self.shots = shots
         shots.append(self)
+        self.kill = False
 
     #Creates a string to be sent to the server
     def toString(self):
@@ -38,12 +39,14 @@ class Shot():
         
         if self.y > util.HEIGHT:
             self.shots.remove(self)
+            self.kill = True
 
         if self.x < 0:
             self.x = util.WIDTH + self.x
 
         if self.y < 0:
             self.shots.remove(self)
+            self.kill = True
 
     #Draws this entity on 'win'
     def draw(self,win):
@@ -58,7 +61,8 @@ class Shot():
         if self.ttl > 0:
             self.ttl -= 1
         else:
-            self.shots.remove(self)
+            if not self.kill: 
+                self.shots.remove(self)
 
         self.a = (self.x,self.y)
         self.b = (self.x + self.size*math.cos(self.ang),self.y + self.size*math.sin(self.ang))
@@ -201,7 +205,6 @@ class Game():
         self.shots = []
         self.player = Player(util.random_pos(50),util.decode_color(self.id),self.shots)
         
-
         self.kill = False
     
     def redraw_win(self,win):

@@ -6,7 +6,7 @@ import random
 WIDTH = 860
 HEIGHT = 640
 TICKRATE = 60
-backgroundFile = 'background.png'
+backgroundFile = 'dark-space-minimal-art-4k-ll.jpg'
 
 #Player constants
 pWidth = 48
