@@ -5,7 +5,7 @@ import random
 #Game constants
 WIDTH = 860
 HEIGHT = 640
-TICKRATE = 20
+TICKRATE = 60
 backgroundFile = 'background.png'
 
 #Player constants
@@ -98,7 +98,7 @@ def clientParsing():
                         default=['::1','5556'])
     a = parser.parse_args()
     
-    return a.id,a.s[0],int(a.s[1]),a.c[0],int(a.c[1])
+    return a.id,(a.s[0],int(a.s[1])),(a.c[0],int(a.c[1]))
     
 def serverParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

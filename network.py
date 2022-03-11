@@ -72,7 +72,7 @@ class NetworkServer():
 
             self.wakeClients.set()
 
-
+ 
     #Launches a client thread when a session is new or updates the session metrics
     def sessionControl(self, color, packetID, time, addr, clientPort):
         if not color in self.metrics:

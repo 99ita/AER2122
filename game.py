@@ -8,7 +8,7 @@ import util
 
 #Class to define a client shots
 class Shot():
-    def __init__(self,x,y,ang,color):
+    def __init__(self,x,y,ang,color,shots):
         self.x = x
         self.y = y 
         self.ang = ang * (math.pi/180)
@@ -21,6 +21,7 @@ class Shot():
         self.a = (self.x,self.y)
         self.b = (self.x + self.size*math.cos(self.ang),self.y + self.size*math.sin(self.ang))
 
+        self.shots = shots
         shots.append(self)
 
     #Creates a string to be sent to the server
@@ -36,13 +37,13 @@ class Shot():
             self.x -= util.WIDTH
         
         if self.y > util.HEIGHT:
-            shots.remove(self)
+            self.shots.remove(self)
 
         if self.x < 0:
             self.x = util.WIDTH + self.x
 
         if self.y < 0:
-            shots.remove(self)
+            self.shots.remove(self)
 
     #Draws this entity on 'win'
     def draw(self,win):
@@ -57,7 +58,7 @@ class Shot():
         if self.ttl > 0:
             self.ttl -= 1
         else:
-            shots.remove(self)
+            self.shots.remove(self)
 
         self.a = (self.x,self.y)
         self.b = (self.x + self.size*math.cos(self.ang),self.y + self.size*math.sin(self.ang))
@@ -68,7 +69,7 @@ class Shot():
 
 #Class to define the client player
 class Player(pg.sprite.Sprite):
-    def __init__(self,pos,color):
+    def __init__(self,pos,color,shots):
         self.x, self.y = pos
         self.w = util.pWidth
         self.h = util.pHeight
@@ -87,6 +88,7 @@ class Player(pg.sprite.Sprite):
         self.ang = 0
 
         self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
+        self.shots = shots
 
     #Creates a string to be sent to the server
     def toString(self):    
@@ -167,7 +169,7 @@ class Player(pg.sprite.Sprite):
             if self.shotCooldown == 0:
                 self.shotCooldown = util.pShotCooldown
                 x,y = self.triangle[2]
-                Shot(x,y,self.ang,self.color)
+                Shot(x,y,self.ang,self.color,self.shots)
 
     #Updates entity per tick
     def update(self):
@@ -188,51 +190,43 @@ class Player(pg.sprite.Sprite):
 
 #Class to launch the game client
 class Game():
-    def __init__(self,id,serverAdrPort,clientAdrPort):
+    def __init__(self):
+        self.id, self.serverPair, self.clientPair = util.clientParsing()
+
         self.win = pg.display.set_mode((util.WIDTH,util.HEIGHT))
         pg.display.set_caption("MicroShips")
-        background = pg.image.load(util.backgroundFile)
-        background = pg.transform.scale(background, (util.WIDTH, util.HEIGHT))
+        self.background = pg.image.load(util.backgroundFile)
+        self.background = pg.transform.scale(self.background, (util.WIDTH, util.HEIGHT))
 
-        self.player = Player(util.random_pos(50))
         self.shots = []
+        self.player = Player(util.random_pos(50),util.decode_color(self.id),self.shots)
+        
 
         self.kill = False
     
-    def redraw_win(self,win,player):
-        win.blit(background,(0,0))
+    def redraw_win(self,win):
+        win.blit(self.background,(0,0))
         for s in self.shots:
             s.draw(win)
         self.player.draw(win)
         pg.display.flip()
 
     
-    def main():
+    def main(self):
         packetID = 0
 
-        id, sap, cap = util.clientParsing()
-        
-
-        serverIPv6 = sys.argv[1]  
-        serverPort = 5555
-        
-        clientIPv6 = "::1"
-        clientPort = int(sys.argv[2])
-
         inSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        #inSock.bind((clientIPv6, clientPort))
+        #inSock.bind(self.clientPair)
         
         outSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 
 
         run = True
 
-        p = Player(50,200,util.decode_color(int(sys.argv[3])))
         clock = pg.time.Clock()
-
-
         while run:
             clock.tick(util.TICKRATE)
+
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     run = False
@@ -240,82 +234,20 @@ class Game():
 
             if not run: break
 
-            p.update()
-            message = str(clientPort) + " " + str(packetID) + " " + p.toString()
-            for s in shots:
+            self.player.update()
+            message = str(self.clientPair[1]) + " " + str(packetID) + " " + self.player.toString()
+            
+            for s in self.shots:
                 s.update()
                 message += s.toString()
 
-
-            redraw_win(win,p)
-            outSock.sendto(message.encode("utf-8"), (serverIPv6, serverPort))
+            self.redraw_win(self.win)
+            outSock.sendto(message.encode("utf-8"), self.serverPair)
             packetID += 1
 
         
 
 
+g = Game()
+g.main()
 
-
-#Lista para guardar os tiros
-shots = []
-#Definições do display 
-win = pg.display.set_mode((util.WIDTH,util.HEIGHT))
-pg.display.set_caption("KSD")
-background = util.black
-#all_sprite = pg.sprite.Group
-
-def redraw_win(win,player):
-    win.fill(background)
-    for s in shots:
-        s.draw(win)
-    player.draw(win)
-    pg.display.flip()
-
-def main():
-    packetID = 0
-
-
-    if not len(sys.argv) == 4:
-        print("Wrong Call!")
-        exit()
-    
-
-    serverIPv6 = sys.argv[1]  
-    serverPort = 5555
-    
-    clientIPv6 = "::1"
-    clientPort = int(sys.argv[2])
-
-    inSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-    #inSock.bind((clientIPv6, clientPort))
-    
-    outSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-
-
-    run = True
-
-    p = Player(50,200,util.decode_color(int(sys.argv[3])))
-    clock = pg.time.Clock()
-
-
-    while run:
-        clock.tick(util.TICKRATE)
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                run = False
-                pg.quit()
-
-        if not run: break
-
-        p.update()
-        message = str(clientPort) + " " + str(packetID) + " " + p.toString()
-        for s in shots:
-            s.update()
-            message += s.toString()
-
-
-        redraw_win(win,p)
-        outSock.sendto(message.encode("utf-8"), (serverIPv6, serverPort))
-        packetID += 1
-
-main()

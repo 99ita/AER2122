@@ -12,7 +12,7 @@ shots = {}
 players = {}
 playersInfo = {}
 
-
+ 
 if not len(sys.argv) == 2:
     print("Wrong Call!")
     exit()
