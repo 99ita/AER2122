@@ -6,6 +6,7 @@ import socket
 import util
 
 
+#Class to define a client shots
 class Shot():
     def __init__(self,x,y,ang,color):
         self.x = x
@@ -22,10 +23,11 @@ class Shot():
 
         shots.append(self)
 
+    #Creates a string to be sent to the server
     def toString(self):
         return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ':'
 
-
+    #Entity movement logic
     def move(self):
         self.x += self.vel*math.cos(self.ang)
         self.y += self.vel*math.sin(self.ang)
@@ -42,13 +44,14 @@ class Shot():
         if self.y < 0:
             shots.remove(self)
 
-    
+    #Draws this entity on 'win'
     def draw(self,win):
         self.a = (self.x,self.y)
         self.b = (self.x + self.size*math.cos(self.ang),self.y + self.size*math.sin(self.ang))
         
         pg.draw.line(win, self.color, self.a, self.b, 2)
 
+    #Updates entity per tick
     def update(self):
         self.move()
         if self.ttl > 0:
@@ -63,10 +66,10 @@ class Shot():
 
 
 
+#Class to define the client player
 class Player(pg.sprite.Sprite):
-    def __init__(self,x,y,color):
-        self.x = x
-        self.y = y
+    def __init__(self,pos,color):
+        self.x, self.y = pos
         self.w = util.pWidth
         self.h = util.pHeight
         self.color = color
@@ -85,14 +88,11 @@ class Player(pg.sprite.Sprite):
 
         self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
 
-
-
+    #Creates a string to be sent to the server
     def toString(self):    
         return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.health) + '_'
 
-
-
-
+    #Draws this entity on 'win'
     def draw(self, win):
         self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
 
@@ -113,13 +113,12 @@ class Player(pg.sprite.Sprite):
         pg.draw.polygon(win, self.color, self.triangle, fill)
 
 
-
-    def drag(self):
-        self.velX *= 0.92
-        self.velY *= 0.92
-
-
+    #Entity movement logic
     def move(self):
+        #Natural drag
+        self.velX *= util.pDrag
+        self.velY *= util.pDrag
+
         self.x += self.velX
         self.y += self.velY
         
@@ -135,11 +134,7 @@ class Player(pg.sprite.Sprite):
         if self.y < 0:
             self.y = 0#HEIGHT + self.y
 
-    
-        
-        
-
-
+    #Applies changes to entity when a key is pressed
     def key_press(self):
         keys = pg.key.get_pressed()
         
@@ -174,9 +169,9 @@ class Player(pg.sprite.Sprite):
                 x,y = self.triangle[2]
                 Shot(x,y,self.ang,self.color)
 
+    #Updates entity per tick
     def update(self):
         self.key_press()
-        self.drag()
         self.move()
 
         if self.shieldCooldown > 0:
@@ -191,6 +186,72 @@ class Player(pg.sprite.Sprite):
         self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
 
 
+#Class to launch the game client
+class Game():
+    def __init__(self,id,serverAdrPort,clientAdrPort):
+        self.win = pg.display.set_mode((util.WIDTH,util.HEIGHT))
+        pg.display.set_caption("MicroShips")
+        background = pg.image.load(util.backgroundFile)
+        background = pg.transform.scale(background, (util.WIDTH, util.HEIGHT))
+
+        self.player = Player(util.random_pos(50))
+        self.shots = []
+
+        self.kill = False
+    
+    def redraw_win(self,win,player):
+        win.blit(background,(0,0))
+        for s in self.shots:
+            s.draw(win)
+        self.player.draw(win)
+        pg.display.flip()
+
+    
+    def main():
+        packetID = 0
+
+        id, sap, cap = util.clientParsing()
+        
+
+        serverIPv6 = sys.argv[1]  
+        serverPort = 5555
+        
+        clientIPv6 = "::1"
+        clientPort = int(sys.argv[2])
+
+        inSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        #inSock.bind((clientIPv6, clientPort))
+        
+        outSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+
+
+        run = True
+
+        p = Player(50,200,util.decode_color(int(sys.argv[3])))
+        clock = pg.time.Clock()
+
+
+        while run:
+            clock.tick(util.TICKRATE)
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    run = False
+                    pg.quit()
+
+            if not run: break
+
+            p.update()
+            message = str(clientPort) + " " + str(packetID) + " " + p.toString()
+            for s in shots:
+                s.update()
+                message += s.toString()
+
+
+            redraw_win(win,p)
+            outSock.sendto(message.encode("utf-8"), (serverIPv6, serverPort))
+            packetID += 1
+
+        
 
 
 
@@ -233,7 +294,7 @@ def main():
 
     run = True
 
-    p = Player(50,50,util.decode_color(int(sys.argv[3])))
+    p = Player(50,200,util.decode_color(int(sys.argv[3])))
     clock = pg.time.Clock()
 
 

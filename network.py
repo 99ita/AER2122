@@ -1,19 +1,17 @@
 from cProfile import run
 import socket
 from datetime import datetime
-from queue import Queue
 import threading
 import util
-import argparse
 
 #Network class for the client communications
 class NetworkClient():
-    def __init__(self, serverIP, serverPort, clientIP, clientPort):
+    def __init__(self, serverPair, clientPair):
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.serverIP_Port = (serverIP,serverPort)
+        self.serverPair = serverPair
 
         self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.inSocket.bind((clientIP,clientPort))
+        self.inSocket.bind(clientPair)
 
         self.packetID = 0
 
@@ -25,9 +23,9 @@ class NetworkClient():
         
 #Network class for the server communications
 class NetworkServer():
-    def __init__(self, serverIP, serverPort, timeout):
+    def __init__(self, serverPair, timeout):
         self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.inSocket.bind((serverIP,serverPort))
+        self.inSocket.bind(serverPair)
         self.inSocket.settimeout(timeout)
         
         self.metrics = {}

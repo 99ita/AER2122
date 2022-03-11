@@ -1,15 +1,18 @@
 import math
 import argparse
+import random
 
 #Game constants
 WIDTH = 860
 HEIGHT = 640
 TICKRATE = 20
+backgroundFile = 'background.png'
 
 #Player constants
 pWidth = 48
 pHeight = 32
 pAcc = 0.35*(60/TICKRATE)
+pDrag = 0.92
 pShieldCooldown = int(120*(TICKRATE/60))
 pShieldActive = int(80*(TICKRATE/60))
 pShotCooldown = int(100*(TICKRATE/60))
@@ -119,6 +122,10 @@ def serverParsing():
 #---------------------------------------------------------------
 
 #Game logic
+
+def random_pos(pad):
+    return (random.randrange(pad,WIDTH - pad),random.randrange(pad,HEIGHT - pad))
+
 def generate_triangle(center,width,height,angle):
     x,y = center
     w = int(width/2)
