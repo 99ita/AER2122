@@ -1,8 +1,6 @@
-from operator import sub
-import sys
 import pygame as pg
 import math 
-import socket
+import network
 import util
 
 
@@ -34,15 +32,15 @@ class Shot():
         self.x += self.vel*math.cos(self.ang)
         self.y += self.vel*math.sin(self.ang)
         
-        if self.x > util.WIDTH:
-            self.x -= util.WIDTH
+        if self.x > util.wWidth:
+            self.x -= util.wWidth
         
-        if self.y > util.HEIGHT:
+        if self.y > util.wHeight:
             self.shots.remove(self)
             self.kill = True
 
         if self.x < 0:
-            self.x = util.WIDTH + self.x
+            self.x = util.wWidth + self.x
 
         if self.y < 0:
             self.shots.remove(self)
@@ -96,7 +94,11 @@ class Player(pg.sprite.Sprite):
 
     #Creates a string to be sent to the server
     def toString(self):    
-        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.health) + '_'
+        if self.shield:
+            shld = ',1'
+        else:
+            shld = ',0'
+        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.health) + shld + '_'
 
     #Draws this entity on 'win'
     def draw(self, win):
@@ -128,14 +130,14 @@ class Player(pg.sprite.Sprite):
         self.x += self.velX
         self.y += self.velY
         
-        if self.x > util.WIDTH:
-            self.x -= util.WIDTH
+        if self.x > util.wWidth:
+            self.x -= util.wWidth
         
-        if self.y > util.HEIGHT:
-            self.y = util.HEIGHT
+        if self.y > util.wHeight:
+            self.y = util.wHeight
 
         if self.x < 0:
-            self.x = util.WIDTH + self.x
+            self.x = util.wWidth + self.x
 
         if self.y < 0:
             self.y = 0#HEIGHT + self.y
@@ -197,10 +199,10 @@ class Game():
     def __init__(self):
         self.id, self.serverPair, self.clientPair = util.clientParsing()
 
-        self.win = pg.display.set_mode((util.WIDTH,util.HEIGHT))
+        self.win = pg.display.set_mode((util.wWidth,util.wHeight))
         pg.display.set_caption("MicroShips")
         self.background = pg.image.load(util.backgroundFile)
-        self.background = pg.transform.scale(self.background, (util.WIDTH, util.HEIGHT))
+        self.background = pg.transform.scale(self.background, (util.wWidth, util.wHeight))
 
         self.shots = []
         self.player = Player(util.random_pos(50),util.decode_color(self.id),self.shots)
@@ -208,6 +210,10 @@ class Game():
         self.kill = False
     
     def redraw_win(self,win):
+        self.player.update()
+        for s in self.shots:
+            s.update()
+
         win.blit(self.background,(0,0))
         for s in self.shots:
             s.draw(win)
@@ -216,41 +222,32 @@ class Game():
 
     
     def main(self):
-        packetID = 0
-
-        inSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        #inSock.bind(self.clientPair)
-        
-        outSock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-
+        n = network.NetworkClient(self.serverPair,self.clientPair)
 
         run = True
-
+        frameCounter = 0
         clock = pg.time.Clock()
         while run:
-            clock.tick(util.TICKRATE)
+            clock.tick(util.framerate)
 
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     run = False
                     pg.quit()
-
-            if not run: break
-
-            self.player.update()
-            message = str(self.clientPair[1]) + " " + str(packetID) + " " + self.player.toString()
+                    exit()
             
-            for s in self.shots:
-                s.update()
-                message += s.toString()
-
             self.redraw_win(self.win)
-            outSock.sendto(message.encode("utf-8"), self.serverPair)
-            packetID += 1
+
+            frameCounter += 1
+            if frameCounter >= util.netrate:
+                frameCounter = 0
+                n.send(self.player,self.shots)
+                
+                
 
         
 
-
-g = Game()
-g.main()
+if __name__=="__main__":
+    g = Game()
+    g.main()
 

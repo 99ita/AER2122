@@ -11,7 +11,7 @@ print("Listening...")
 
 while True:
 	try: 
-		string = inSock.recvfrom(1024)
+		data,addr = inSock.recvfrom(1024)
 	except:
 		exit()
-	print(string.decode("utf-8")) 
+	print(data.decode("utf-8")) 

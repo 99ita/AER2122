@@ -3,25 +3,26 @@ import argparse
 import random
 
 #Game constants
-WIDTH = 860
-HEIGHT = 640
-TICKRATE = 60
-backgroundFile = 'dark-space-minimal-art-4k-ll.jpg'
+wWidth = 860 
+wHeight = 640 
+framerate = 60 #FPS
+netrate = 5 #Every <netrate> frames a packet will be sent to server
+backgroundFile = 'dark-space-minimal-art-4k-ll.jpg' 
 
 #Player constants
 pWidth = 48
 pHeight = 32
-pAcc = 0.35*(60/TICKRATE)
+pAcc = 0.35*(60/framerate)
 pDrag = 0.92
-pShieldCooldown = int(120*(TICKRATE/60))
-pShieldActive = int(80*(TICKRATE/60))
-pShotCooldown = int(100*(TICKRATE/60))
+pShieldCooldown = int(120*(framerate/60))
+pShieldActive = int(80*(framerate/60))
+pShotCooldown = int(20*(framerate/60))
 pDefaultHealth = 100
-pDefaultRotation = 3*(60/TICKRATE)
+pDefaultRotation = 3*(60/framerate)
 
 #Shot constants
-sDefaultVel = int(10*(60/TICKRATE))
-sDefaultTTL = int(150*(TICKRATE/60))
+sDefaultVel = int(10*(60/framerate))
+sDefaultTTL = int(150*(framerate/60))
 sDefaultSize = 30
 sDamage = 5
 
@@ -117,14 +118,14 @@ def serverParsing():
 
     a = parser.parse_args()
     
-    return a.s[0],int(a.s[1]),a.t
+    return (a.s[0],int(a.s[1])),int(a.t[0])
 
 #---------------------------------------------------------------
 
 #Game logic
 
 def random_pos(pad):
-    return (random.randrange(pad,WIDTH - pad),random.randrange(pad,HEIGHT - pad))
+    return (random.randrange(pad,wWidth - pad),random.randrange(pad,wHeight - pad))
 
 def generate_triangle(center,width,height,angle):
     x,y = center
@@ -188,7 +189,7 @@ class sShot():
         self.y2 = self.y1 + sDefaultSize*math.sin(self.ang)
     
     def toString(self):
-        return self.x1 + ',' + self.y1 + ',' + self.ang + ',' + self.color + '_'
+        return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + '_'
 
 class sPlayer():
     def __init__(self,data,addr,port):
@@ -198,12 +199,14 @@ class sPlayer():
         self.ang = float(aux[2])
         self.color = int(aux[3])
         self.health = int(aux[4])
+        self.shield = int(aux[5])
+         
         self.triangle = generate_triangle((self.x,self.y), pWidth, pHeight, self.ang)
         self.addr = addr
         self.port = port
 
     def toString(self):
-        return self.x + ',' + self.y + ',' + self.ang + ',' + self.color + ',' + self.health + '_'
+        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.health) + ',' + str(self.shield) + '_'
 
 
 

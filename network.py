@@ -4,21 +4,66 @@ from datetime import datetime
 import threading
 import util
 
+
+printInterval = 3*(util.framerate/util.netrate)
+
 #Network class for the client communications
 class NetworkClient():
     def __init__(self, serverPair, clientPair):
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.serverPair = serverPair
 
+        self.clientPair = clientPair
         self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.inSocket.bind(clientPair)
+        self.inSocket.bind(self.clientPair)
 
         self.packetID = 0
+        self.kill = False
 
+        self.metrics = {}
 
-    def send(self,data):
-        self.outSocket.sendto(data.encode("utf-8"), self.serverIP_Port)
+    def send(self,player,shots):
+        message = str(self.clientPair[1]) + " " + str(self.packetID) + " " + player.toString()
+        for s in shots:
+            message += s.toString()
+        
+        self.outSocket.sendto(message.encode("utf-8"), self.serverPair)
         self.packetID += 1
+
+
+    def metrics(self,fst,packetID):
+        if fst:
+            self.metrics['lastPrinted'] = -10000
+            self.metrics['first'] = int(packetID)
+            self.metrics['curr'] = int(packetID)
+            self.metrics['lost'] = 0
+        else:
+            self.metrics['last'] = self.metrics['curr']
+            self.metrics['curr'] = int(packetID)
+            self.metrics['lost'] += self.metrics['curr'] - self.metrics['last'] - 1
+
+        if self.metrics['curr'] - self.metrics['lastPrinted'] >= printInterval:
+            self.metrics['lastPrinted'] = self.metrics['curr']
+            lossPerc = self.metrics['lost']/(self.metrics['curr'] - self.metrics['first'] + 1)
+            print("Current packetID: ", packetID)
+            print("        ", "lost ", self.metrics['lost'], " packets so far (" , lossPerc , "%)\n") 
+        
+        return False
+
+    def serverListener(self):
+        fst = True
+        while not self.kill:
+            data,addr = self.inSocket.recvfrom(1024)
+            data = data.decode("utf-8")
+            packetID,players,shots = data.split(" ")
+            fst = self.metrics(fst,packetID)
+
+            self.resolvePlayers(players)
+            self.resolveShots(shots)
+
+
+
+        
 
         
 #Network class for the server communications
@@ -26,16 +71,16 @@ class NetworkServer():
     def __init__(self, serverPair, timeout):
         self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.inSocket.bind(serverPair)
-        self.inSocket.settimeout(timeout)
+        self.timeout = timeout
+        self.inSocket.settimeout(10)
         
         self.metrics = {}
-        
         self.shots = {}
         self.players = {}
 
         self.wakeClients = threading.Event()
 
-        self.kill = False
+        self.killSessions = {}
 
             
     #Server loop, listens and parses new messages on a port shared by all clients, and populates the data structures
@@ -46,17 +91,21 @@ class NetworkServer():
             try:
                 data,addr = self.inSocket.recvfrom(1024)
             except:
-                self.kill = True
+                for k in self.killSessions.keys():
+                    self.killSessions[k] = True
+
                 self.wakeClients.set()
                 
                 self.inSocket.close()
-                print("Server Killed!")
+                print("Server timed out!")
                 exit()
             
             decoded = data.decode("utf-8")
             clientPort,packetID,decoded = decoded.split(' ')
             playerStr,shotsStr = decoded.split('_')
             shotsStr = shotsStr.split(':')
+
+            clientPort = int(clientPort)
 
             currTime = datetime.utcnow()
 
@@ -72,84 +121,85 @@ class NetworkServer():
 
             self.wakeClients.set()
 
- 
+
     #Launches a client thread when a session is new or updates the session metrics
     def sessionControl(self, color, packetID, time, addr, clientPort):
         if not color in self.metrics:
-            print("Player ", color, " session initiated...")
-            
-            t = threading.Thread(target=self.clientThread, args=(self.wakeClients,color,(addr,clientPort),))
-            t.start()
-
+            self.killSessions[color] = False
             self.metrics[color] = {}
             self.metrics[color]['lastPrinted'] = -10000
             self.metrics[color]['first'] = int(packetID)
             self.metrics[color]['lastTime'] = time
             self.metrics[color]['curr'] = int(packetID)
             self.metrics[color]['lost'] = 0
+
+            t = threading.Thread(target=self.clientHandler, args=(self.wakeClients,color,(addr[0],clientPort),))
+            t.start()
         else:
             self.metrics[color]['lastTime'] = time
             self.metrics[color]['last'] = self.metrics[color]['curr']
             self.metrics[color]['curr'] = int(packetID)
             self.metrics[color]['lost'] += self.metrics[color]['curr'] - self.metrics[color]['last'] - 1
 
-            if self.metrics[color]['curr'] - self.metrics[color]['lastPrinted'] >= 100:
-                self.metrics[color]['lastPrinted'] = self.metrics[color]['curr']
-                lossPerc = self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'])
-                print("Player ", color, " current packetID: ", packetID)
-                print("Player ", color, " lost ", self.metrics[color]['lost'], " packets so far (" , lossPerc , "%)") 
+        if self.metrics[color]['curr'] - self.metrics[color]['lastPrinted'] >= printInterval:
+            self.metrics[color]['lastPrinted'] = self.metrics[color]['curr']
+            lossPerc = self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
+            print("Player", color, "current packetID: ", packetID)
+            print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , lossPerc , "%)\n") 
     
     
     #Generates the message to send to a client
-    #packetid_vida-jogador_jogador_-tiro_tiro_
+    #packetid_vida jogador_jogador_ tiro_tiro_
     def generateMessage(self, packetID, color):
-        s = str(packetID) + "_" + str(self.players[color].health) + "-"
+        s = str(packetID) + " "
 
         for c in self.players.keys():
-            if self.players[c].color != color:
-                s += self.players[c].toString()
-        s += "-"
+            s += self.players[c].toString()
+        s += " "
 
         for c in self.shots.keys():
-            if self.players[c].color != color:
-                s += self.players[c].toString()
+            for sh in self.shots[c]:
+                s += sh.toString()
         
         return s
 
 
     #Server thread that runs a specififc client connection
-    def clientThread(self,e,color,ipPort):
-        print("Player ", color, " communication thread launched!")
+    def clientHandler(self,e,color,ipPort):
+        print("Player", color, "communication thread launched!\n        ", "client at",str(ipPort),"\n")
 
         outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 
         packetID = 0
 
-        while not self.kill:
+        while not self.killSessions[color]:
             e.wait()
+            if self.killSessions[color]:
+                break
             
             currTime = datetime.utcnow()
-            if (currTime-self.metrics[color]['lastTime']).total_seconds() > 10:
+            if (currTime-self.metrics[color]['lastTime']).total_seconds() > self.timeout:
                 del self.players[color]
                 del self.shots[color]
                 del self.metrics[color]
-                print("Player ", color, " session timed out (10s)...") 
-                break    
+                del self.killSessions[color]
+                print("Player", color, "session timed out...") 
+                self.killSessions[color] = True   
             
-            message = self.generateMessage(packetID, color)
+            if self.killSessions[color]:
+                break
 
-            #outSocket.sendto(message.encode("utf-8"),ipPort)
-            print(message)
+            message = self.generateMessage(packetID, color).encode("utf-8")
+
+            outSocket.sendto(message,ipPort)
             packetID += 1
 
 
         outSocket.close()
-        print("Player ", color, " communication thread terminated!")
+        print("Player", color, "communication thread terminated!")
 
 
 
-n = NetworkServer("::1",5555,10)
-n.run()
         
         
 
