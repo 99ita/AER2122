@@ -6,7 +6,7 @@ import random
 wWidth = 860 
 wHeight = 640 
 framerate = 60 #FPS
-netrate = 5 #Every <netrate> frames a packet will be sent to server
+netrate = 30 #Every <netrate> frames a packet will be sent to server
 backgroundFile = 'dark-space-minimal-art-4k-ll.jpg' 
 
 #Player constants
@@ -118,7 +118,7 @@ def serverParsing():
 
     a = parser.parse_args()
     
-    return (a.s[0],int(a.s[1])),int(a.t[0])
+    return (a.s[0],int(a.s[1])),int(a.t)
 
 #---------------------------------------------------------------
 

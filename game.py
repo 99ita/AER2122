@@ -1,3 +1,4 @@
+import traceback
 import threading
 import pygame as pg
 import math 
@@ -215,7 +216,9 @@ class Game():
         self.sShots = []
 
 
-    def drawServerInfo(self):
+    def drawServerInfo(self,win):
+        print(self.sPlayers)
+        print(self.sShots)
         for k in self.sPlayers.keys():
             if k == self.id:
                 self.player.health = self.sPlayers[self.id].health
@@ -224,17 +227,16 @@ class Game():
                     fill = 0
                 else:
                     fill = 2
-                pg.draw.polygon(self.win, self.sPlayers[k].color, self.sPlayers[k].triangle, fill)
+                #print("Draw player", k)
+                pg.draw.polygon(win, self.sPlayers[k].color, self.sPlayers[k].triangle, fill)
 
         for s in self.sShots:
             if s.color != self.id:
-                pg.draw.line(self.win, s.color, (s.x1,self.y1), (s.x2,self.y2), 2)
+                #print("Draw shot",s.color)
+                pg.draw.line(win, s.color, (s.x1,s.y1), (s.x2,s.y2), 2)
 
-
-
-    
     def redraw_win(self,win):
-        self.drawServerInfo()
+        self.drawServerInfo(win)
         self.player.update()
         for s in self.shots:
             s.update()
@@ -249,6 +251,7 @@ class Game():
     def main(self):
         n = network.NetworkClient(self.serverPair,self.clientPair,self)
         t = threading.Thread(target=n.serverListener)
+        t.daemon = True
         t.start()
 
         run = True
@@ -261,8 +264,7 @@ class Game():
                 for event in pg.event.get():
                     if event.type == pg.QUIT:
                         run = False
-                        pg.quit()
-                        exit()
+                        raise Exception("Quit")
                 
                 self.redraw_win(self.win)
 
@@ -271,7 +273,11 @@ class Game():
                     frameCounter = 0
                     n.send(self.player,self.shots)
         except:
-            n.kill = True
+            print(traceback.format_exc())
+            n.inSocket.close()
+            n.outSocket.close()
+            pg.quit()
+            exit()
                 
 
         

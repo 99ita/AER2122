@@ -18,7 +18,6 @@ class NetworkClient():
         self.inSocket.bind(self.clientPair)
 
         self.packetID = 0
-        self.kill = False
 
         self.metrics = {}
 
@@ -71,23 +70,22 @@ class NetworkClient():
     
 
     def serverListener(self):
-        print("Server listener thread started...")
+        print("Server listener thread started...\n")
         fst = True
-        while not self.kill:
-            data,addr = self.inSocket.recvfrom(1024)
-            data = data.decode("utf-8")
-            print(data)
-            packetID,playersStr,shotsStr = data.split(" ")
-            
-            fst = self.sessionControl(fst,packetID)
-
-            self.resolvePlayers(playersStr)
-            self.resolveShots(shotsStr)
         
-        self.inSocket.close()
-        self.outSocket.close()
-        print("Server listener thread stoped!")
+        try:
+            while True:
+                data,addr = self.inSocket.recvfrom(1024)
+                data = data.decode("utf-8")
+                print(data)
+                packetID,playersStr,shotsStr = data.split(" ")
+                
+                fst = self.sessionControl(fst,packetID)
 
+                self.resolvePlayers(playersStr)
+                self.resolveShots(shotsStr)
+        except:
+            print("Server listener thread exiting!")
 
 
         
