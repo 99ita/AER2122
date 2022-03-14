@@ -189,7 +189,7 @@ class sShot():
         self.y2 = self.y1 + sDefaultSize*math.sin(self.ang)
     
     def toString(self):
-        return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + '_'
+        return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + ':'
 
 class sPlayer():
     def __init__(self,data,addr,port):
@@ -206,7 +206,7 @@ class sPlayer():
         self.port = port
 
     def toString(self):
-        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.health) + ',' + str(self.shield) + '_'
+        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.health) + ',' + str(self.shield) + ':'
 
 
 

@@ -9,7 +9,7 @@ printInterval = 3*(util.framerate/util.netrate)
 
 #Network class for the client communications
 class NetworkClient():
-    def __init__(self, serverPair, clientPair):
+    def __init__(self, serverPair, clientPair, game):
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.serverPair = serverPair
 
@@ -22,6 +22,8 @@ class NetworkClient():
 
         self.metrics = {}
 
+        self.game = game
+
     def send(self,player,shots):
         message = str(self.clientPair[1]) + " " + str(self.packetID) + " " + player.toString()
         for s in shots:
@@ -31,7 +33,7 @@ class NetworkClient():
         self.packetID += 1
 
 
-    def metrics(self,fst,packetID):
+    def sessionControl(self,fst,packetID):
         if fst:
             self.metrics['lastPrinted'] = -10000
             self.metrics['first'] = int(packetID)
@@ -50,16 +52,41 @@ class NetworkClient():
         
         return False
 
+    def resolvePlayers(self,str):
+        str = str.split(":")
+        self.game.sPlayers = {}
+        for s in str:
+            if len(s) > 2:
+                p = util.sPlayer(s,0,0)
+                self.game.sPlayers[p.color] = p
+
+    def resolveShots(self,str):
+        str = str.split(":")
+        self.game.sShots = []
+        for s in str:
+            if len(s) > 2:
+                sh = util.sShot(s)
+                self.game.sShots.append(sh)
+
+    
+
     def serverListener(self):
+        print("Server listener thread started...")
         fst = True
         while not self.kill:
             data,addr = self.inSocket.recvfrom(1024)
             data = data.decode("utf-8")
-            packetID,players,shots = data.split(" ")
-            fst = self.metrics(fst,packetID)
+            print(data)
+            packetID,playersStr,shotsStr = data.split(" ")
+            
+            fst = self.sessionControl(fst,packetID)
 
-            self.resolvePlayers(players)
-            self.resolveShots(shots)
+            self.resolvePlayers(playersStr)
+            self.resolveShots(shotsStr)
+        
+        self.inSocket.close()
+        self.outSocket.close()
+        print("Server listener thread stoped!")
 
 
 

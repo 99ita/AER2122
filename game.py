@@ -1,3 +1,4 @@
+import threading
 import pygame as pg
 import math 
 import network
@@ -91,6 +92,7 @@ class Player(pg.sprite.Sprite):
 
         self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
         self.shots = shots
+        
 
     #Creates a string to be sent to the server
     def toString(self):    
@@ -208,8 +210,31 @@ class Game():
         self.player = Player(util.random_pos(50),util.decode_color(self.id),self.shots)
         
         self.kill = False
+
+        self.sPlayers = {}
+        self.sShots = []
+
+
+    def drawServerInfo(self):
+        for k in self.sPlayers.keys():
+            if k == self.id:
+                self.player.health = self.sPlayers[self.id].health
+            else:
+                if self.sPlayers[k].shield == 0:
+                    fill = 0
+                else:
+                    fill = 2
+                pg.draw.polygon(self.win, self.sPlayers[k].color, self.sPlayers[k].triangle, fill)
+
+        for s in self.sShots:
+            if s.color != self.id:
+                pg.draw.line(self.win, s.color, (s.x1,self.y1), (s.x2,self.y2), 2)
+
+
+
     
     def redraw_win(self,win):
+        self.drawServerInfo()
         self.player.update()
         for s in self.shots:
             s.update()
@@ -222,27 +247,31 @@ class Game():
 
     
     def main(self):
-        n = network.NetworkClient(self.serverPair,self.clientPair)
+        n = network.NetworkClient(self.serverPair,self.clientPair,self)
+        t = threading.Thread(target=n.serverListener)
+        t.start()
 
         run = True
         frameCounter = 0
         clock = pg.time.Clock()
-        while run:
-            clock.tick(util.framerate)
+        try:
+            while run:
+                clock.tick(util.framerate)
 
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    run = False
-                    pg.quit()
-                    exit()
-            
-            self.redraw_win(self.win)
-
-            frameCounter += 1
-            if frameCounter >= util.netrate:
-                frameCounter = 0
-                n.send(self.player,self.shots)
+                for event in pg.event.get():
+                    if event.type == pg.QUIT:
+                        run = False
+                        pg.quit()
+                        exit()
                 
+                self.redraw_win(self.win)
+
+                frameCounter += 1
+                if frameCounter >= util.netrate:
+                    frameCounter = 0
+                    n.send(self.player,self.shots)
+        except:
+            n.kill = True
                 
 
         
