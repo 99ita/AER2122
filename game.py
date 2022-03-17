@@ -1,9 +1,11 @@
+
 import traceback
 import threading
 import pygame as pg
 import math 
 import network
 import util
+import random
 
 
 #Class to define a client shots
@@ -72,8 +74,11 @@ class Shot():
 
 
 #Class to define the client player
-class Player(pg.sprite.Sprite):
-    def __init__(self,pos,color,shots):
+class Player():
+    def __init__(self,pos,color,shots,auto):
+        self.auto = auto
+        self.lastAction = 0
+
         self.x, self.y = pos
         self.w = util.pWidth
         self.h = util.pHeight
@@ -93,6 +98,7 @@ class Player(pg.sprite.Sprite):
 
         self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
         self.shots = shots
+
         
 
     #Creates a string to be sent to the server
@@ -145,15 +151,90 @@ class Player(pg.sprite.Sprite):
         if self.y < 0:
             self.y = 0#HEIGHT + self.y
 
+    def move_random(self):
+        aAuto = False
+        dAuto = False
+        eAuto = False
+        spaceAuto = False
+        
+        pad = False
+
+        if not self.auto:
+            return aAuto,dAuto,eAuto,spaceAuto
+
+
+        rand = random.randrange(1,100)
+
+        if rand > 95:
+            eAuto = True
+        if rand < 10:
+            spaceAuto = True
+
+
+        rand = random.randrange(1,100)
+
+        if self.y > util.wHeight-150:
+            pad = True
+            if rand > 20:
+                if self.ang > -45 and self.ang <= 90:
+                    self.lastAction = 0 
+                    aAuto = True
+                if self.ang < -135 or self.ang > 90: 
+                    self.lastAction = 0
+                    dAuto = True
+        
+        
+        if self.y < 150:
+            pad = True
+            if rand > 20:
+                if self.ang > -90 and self.ang < 45: 
+                    self.lastAction = 0
+                    dAuto = True
+                if self.ang <= -90 or self.ang > 135: 
+                    self.lastAction = 0
+                    aAuto = True
+
+        if not pad:
+            if self.lastAction == 1:
+                if rand > 20:
+                    aAuto = True
+                    self.lastAction = 1
+                else:
+                    self.lastAction = 0
+
+            if self.lastAction == 2:
+                if rand > 20:
+                    dAuto = True
+                    self.lastAction = 2
+                else:
+                    self.lastAction = 0
+
+            
+            if self.lastAction == 0:
+                if rand > 95:
+                    aAuto = True
+                    self.lastAction = 1
+                elif rand <= 5:
+                    dAuto = True
+                    self.lastAction = 2
+                else:
+                    self.lastAction = 0
+            
+        
+        print(aAuto,dAuto,eAuto,spaceAuto,"\n",self.ang)
+        return aAuto,dAuto,eAuto,spaceAuto
+
     #Applies changes to entity when a key is pressed
     def key_press(self):
         keys = pg.key.get_pressed()
-        
-        if keys[pg.K_w]:
+        aAuto,dAuto,eAuto,spaceAuto = self.move_random()
+
+
+        if keys[pg.K_w] or self.auto:
             self.velX += self.acc*(math.cos(self.ang * (math.pi/180)))
             self.velY += self.acc*(math.sin(self.ang * (math.pi/180)))
 
-        if keys[pg.K_a]:
+        if keys[pg.K_a] or aAuto:
             if self.ang - util.pDefaultRotation < -180:
                 self.ang = 180 - (util.pDefaultRotation - (self.ang + 180))
             else:
@@ -163,18 +244,18 @@ class Player(pg.sprite.Sprite):
             self.velX -= self.acc*(math.cos(self.ang * (math.pi/180)))
             self.velY -= self.acc*(math.sin(self.ang * (math.pi/180)))
 
-        if keys[pg.K_d]:             
+        if keys[pg.K_d] or dAuto:             
             if self.ang + util.pDefaultRotation > 180:
                 self.ang = -180 + (util.pDefaultRotation - (180 - self.ang))
             else:
                 self.ang += util.pDefaultRotation
 
-        if keys[pg.K_e]:
+        if keys[pg.K_e] or eAuto:
             if self.shieldCooldown == 0 and not self.shield:
                 self.shield = True
                 self.shieldCooldown = util.pShieldActive
 
-        if keys[pg.K_SPACE]:
+        if keys[pg.K_SPACE] or spaceAuto:
             if self.shotCooldown == 0:
                 self.shotCooldown = util.pShotCooldown
                 x,y = self.triangle[2]
@@ -200,7 +281,7 @@ class Player(pg.sprite.Sprite):
 #Class to launch the game client
 class Game():
     def __init__(self):
-        self.id, self.serverPair, self.clientPair = util.clientParsing()
+        self.id, self.serverPair, self.clientPair, auto = util.clientParsing()
 
         self.win = pg.display.set_mode((util.wWidth,util.wHeight))
         pg.display.set_caption("MicroShips")
@@ -208,7 +289,7 @@ class Game():
         self.background = pg.transform.scale(self.background, (util.wWidth, util.wHeight))
 
         self.shots = []
-        self.player = Player(util.random_pos(50),util.decode_color(self.id),self.shots)
+        self.player = Player(util.random_pos(50),util.decode_color(self.id),self.shots,auto)
         
         self.kill = False
 
@@ -217,38 +298,50 @@ class Game():
 
 
     def drawServerInfo(self,win):
-        print(self.sPlayers)
-        print(self.sShots)
         for k in self.sPlayers.keys():
             if k == self.id:
                 self.player.health = self.sPlayers[self.id].health
             else:
                 if self.sPlayers[k].shield == 0:
-                    fill = 0
-                else:
                     fill = 2
+                else:
+                    fill = 0
                 #print("Draw player", k)
-                pg.draw.polygon(win, self.sPlayers[k].color, self.sPlayers[k].triangle, fill)
+                pg.draw.polygon(win, util.decode_color(self.sPlayers[k].color), self.sPlayers[k].triangle, fill)
 
         for s in self.sShots:
-            if s.color != self.id:
-                #print("Draw shot",s.color)
-                pg.draw.line(win, s.color, (s.x1,s.y1), (s.x2,s.y2), 2)
+            if s != None:
+                if s.color != self.id:
+                    #print("Draw shot",s.color)
+                    pg.draw.line(win, util.decode_color(s.color), (s.x1,s.y1), (s.x2,s.y2), 2)
 
     def redraw_win(self,win):
-        self.drawServerInfo(win)
         self.player.update()
         for s in self.shots:
             s.update()
 
         win.blit(self.background,(0,0))
+        self.drawServerInfo(win)
         for s in self.shots:
             s.draw(win)
         self.player.draw(win)
         pg.display.flip()
 
+        ''' def first_screen(self):
+        run = True
+        while run:
+            win.fill
+            keys = pg.key.get_pressed()'''
+
+        
+        
+
     
     def main(self):
+        #q = self.first_screen()
+        #if q:
+         #   exit()
+
         n = network.NetworkClient(self.serverPair,self.clientPair,self)
         t = threading.Thread(target=n.serverListener)
         t.daemon = True
@@ -283,6 +376,7 @@ class Game():
         
 
 if __name__=="__main__":
+
     g = Game()
     g.main()
 

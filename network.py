@@ -1,8 +1,10 @@
-from cProfile import run
+import traceback
 import socket
 from datetime import datetime
 import threading
 import util
+import pygame as pg
+import time
 
 
 printInterval = 3*(util.framerate/util.netrate)
@@ -33,22 +35,36 @@ class NetworkClient():
 
 
     def sessionControl(self,fst,packetID):
+        self.metrics['now'] = time.time()
         if fst:
+            nPackets = 0
             self.metrics['lastPrinted'] = -10000
             self.metrics['first'] = int(packetID)
             self.metrics['curr'] = int(packetID)
             self.metrics['lost'] = 0
+            self.metrics['nPackets'] = 0
+            self.metrics['lastTime'] = time.time()
+
+
         else:
+            self.metrics['nPackets'] += 1
             self.metrics['last'] = self.metrics['curr']
             self.metrics['curr'] = int(packetID)
             self.metrics['lost'] += self.metrics['curr'] - self.metrics['last'] - 1
 
         if self.metrics['curr'] - self.metrics['lastPrinted'] >= printInterval:
+            dif = 0
+            if not fst: 
+                dif = self.metrics['nPackets']/(self.metrics['now']-self.metrics['lastTime'])
             self.metrics['lastPrinted'] = self.metrics['curr']
             lossPerc = self.metrics['lost']/(self.metrics['curr'] - self.metrics['first'] + 1)
             print("Current packetID: ", packetID)
-            print("        ", "lost ", self.metrics['lost'], " packets so far (" , lossPerc , "%)\n") 
-        
+            print("        ", "lost ", self.metrics['lost'], " packets so far (" , lossPerc , "%)") 
+            print("        ", dif, "packets/s")
+            self.metrics['nPackets'] = 0
+            self.metrics['lastTime'] = self.metrics['now']
+
+
         return False
 
     def resolvePlayers(self,str):
@@ -57,7 +73,8 @@ class NetworkClient():
         for s in str:
             if len(s) > 2:
                 p = util.sPlayer(s,0,0)
-                self.game.sPlayers[p.color] = p
+                if p != None:
+                    self.game.sPlayers[p.color] = p
 
     def resolveShots(self,str):
         str = str.split(":")
@@ -65,26 +82,29 @@ class NetworkClient():
         for s in str:
             if len(s) > 2:
                 sh = util.sShot(s)
-                self.game.sShots.append(sh)
+                if sh != None:
+                    print(s)
+                    self.game.sShots.append(sh)
 
     
 
     def serverListener(self):
         print("Server listener thread started...\n")
         fst = True
-        
+        nPackets = 0
         try:
             while True:
                 data,addr = self.inSocket.recvfrom(1024)
                 data = data.decode("utf-8")
-                print(data)
                 packetID,playersStr,shotsStr = data.split(" ")
                 
+
                 fst = self.sessionControl(fst,packetID)
 
                 self.resolvePlayers(playersStr)
                 self.resolveShots(shotsStr)
         except:
+            print(traceback.format_exc())
             print("Server listener thread exiting!")
 
 
@@ -168,7 +188,7 @@ class NetworkServer():
 
         if self.metrics[color]['curr'] - self.metrics[color]['lastPrinted'] >= printInterval:
             self.metrics[color]['lastPrinted'] = self.metrics[color]['curr']
-            lossPerc = self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
+            lossPerc = 0#self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
             print("Player", color, "current packetID: ", packetID)
             print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , lossPerc , "%)\n") 
     
@@ -196,9 +216,9 @@ class NetworkServer():
         outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 
         packetID = 0
-
+        clock = pg.time.Clock()
         while not self.killSessions[color]:
-            e.wait()
+            clock.tick(int(util.framerate/util.netrate))
             if self.killSessions[color]:
                 break
             
@@ -222,14 +242,4 @@ class NetworkServer():
 
         outSocket.close()
         print("Player", color, "communication thread terminated!")
-
-
-
-        
-        
-
-
-
-
-
     

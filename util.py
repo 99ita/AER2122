@@ -1,12 +1,13 @@
 import math
 import argparse
 import random
+from tkinter import N
 
 #Game constants
 wWidth = 860 
 wHeight = 640 
 framerate = 60 #FPS
-netrate = 30 #Every <netrate> frames a packet will be sent to server
+netrate = 5 #Every <netrate> frames a packet will be sent to server
 backgroundFile = 'dark-space-minimal-art-4k-ll.jpg' 
 
 #Player constants
@@ -97,9 +98,12 @@ def clientParsing():
                         type=str,
                         nargs=2,
                         default=['::1','5556'])
+    parser.add_argument('-a',
+                        help='Auto client',
+                        action='store_true')
     a = parser.parse_args()
     
-    return a.id,(a.s[0],int(a.s[1])),(a.c[0],int(a.c[1]))
+    return a.id,(a.s[0],int(a.s[1])),(a.c[0],int(a.c[1])),a.a
     
 def serverParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -180,31 +184,35 @@ def resolve_colision(shot, player):
 #Simplified game classes
 class sShot():
     def __init__(self,data):
-        aux = data.split(',')
-        self.x1 = float(aux[0])
-        self.y1 = float(aux[1])
-        self.ang = float(aux[2])
-        self.color = int(aux[3])
-        self.x2 = self.x1 + sDefaultSize*math.cos(self.ang)
-        self.y2 = self.y1 + sDefaultSize*math.sin(self.ang)
-    
+        try:
+            aux = data.split(',')
+            self.x1 = float(aux[0])
+            self.y1 = float(aux[1])
+            self.ang = float(aux[2])
+            self.color = int(aux[3])
+            self.x2 = self.x1 + sDefaultSize*math.cos(self.ang)
+            self.y2 = self.y1 + sDefaultSize*math.sin(self.ang)
+        except:
+            return None
     def toString(self):
         return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + ':'
 
 class sPlayer():
     def __init__(self,data,addr,port):
-        aux = data.split(',')
-        self.x = float(aux[0])
-        self.y = float(aux[1])
-        self.ang = float(aux[2])
-        self.color = int(aux[3])
-        self.health = int(aux[4])
-        self.shield = int(aux[5])
-         
-        self.triangle = generate_triangle((self.x,self.y), pWidth, pHeight, self.ang)
-        self.addr = addr
-        self.port = port
-
+        try:
+            aux = data.split(',')
+            self.x = float(aux[0])
+            self.y = float(aux[1])
+            self.ang = float(aux[2])
+            self.color = int(aux[3])
+            self.health = int(aux[4])
+            self.shield = int(aux[5])
+            
+            self.triangle = generate_triangle((self.x,self.y), pWidth, pHeight, self.ang)
+            self.addr = addr
+            self.port = port
+        except:
+            return None
     def toString(self):
         return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.health) + ',' + str(self.shield) + ':'
 
