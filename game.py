@@ -109,11 +109,20 @@ class Player():
             shld = ',0'
         return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.health) + shld + '_'
 
+    def health_bar(self,a,b):
+        rect = 0
+        d = ((a[0]+b[0])/2,(a[1]+b[1])/2)
+
+        
+
+
+        return rect
+
     #Draws this entity on 'win'
     def draw(self, win):
         self.triangle = util.generate_triangle((self.x,self.y), self.w, self.h, self.ang)
 
-        _,_,c = self.triangle
+        a,b,c = self.triangle
 
         if self.shield:
             fill = 0
@@ -128,6 +137,10 @@ class Player():
             pg.draw.circle(win,util.grey,c,4)
 
         pg.draw.polygon(win, self.color, self.triangle, fill)
+
+
+
+        life = ((),(),(),())
 
 
     #Entity movement logic
