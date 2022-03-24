@@ -6,8 +6,8 @@ from tkinter import N
 #Game constants
 wWidth = 860 
 wHeight = 640 
-framerate = 60 #FPS
-netrate = 5 #Every <netrate> frames a packet will be sent to server
+framerate = 20 #FPS
+netrate = 1 #Every <netrate> frames a packet will be sent to server
 backgroundFile = 'dark-space-minimal-art-4k-ll.jpg' 
 
 #Player constants
@@ -22,10 +22,10 @@ pDefaultHealth = 100
 pDefaultRotation = 3*(60/framerate)
 
 #Shot constants
-sDefaultVel = int(10*(60/framerate))
+sDefaultVel = int(5*(60/framerate))
 sDefaultTTL = int(150*(framerate/60))
 sDefaultSize = 30
-sDamage = 5
+sDamage = 20
 
 #Colors
 black = (0,0,0) #1
@@ -175,7 +175,7 @@ def resolve_colision(shot, player):
             player.health -= sDamage
         else:
             player.health = 0
-        shot = None
+        shot.kill = 1
 
     return shot,player
 
@@ -190,12 +190,15 @@ class sShot():
             self.y1 = float(aux[1])
             self.ang = float(aux[2])
             self.color = int(aux[3])
+            self.id = int(aux[4])
+            self.kill = int(aux[5])
             self.x2 = self.x1 + sDefaultSize*math.cos(self.ang)
             self.y2 = self.y1 + sDefaultSize*math.sin(self.ang)
         except:
             return None
+
     def toString(self):
-        return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + ':'
+        return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.id) + ',' + str(self.kill) + ':'
 
 class sPlayer():
     def __init__(self,data,addr,port):

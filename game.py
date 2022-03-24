@@ -7,10 +7,28 @@ import network
 import util
 import random
 
+def health_bar(player,win,a,b):
+    width = (player.health/util.pDefaultHealth) * (util.pWidth*0.9)/2
+    pad = 6
+
+    dX = (a[0]+b[0])/2
+    dY = (a[1]+b[1])/2
+
+    sin = math.sin(player.ang*(math.pi/180))
+    cos = math.cos(player.ang*(math.pi/180)) 
+
+
+    aX = (dX - width * sin) - pad*cos
+    aY = (dY + width * cos) - pad*sin
+
+    bX = (dX + width * sin) - pad*cos
+    bY = (dY - width * cos) - pad*sin
+
+    pg.draw.line(win, util.white, (aX,aY), (bX,bY), 4)
 
 #Class to define a client shots
 class Shot():
-    def __init__(self,x,y,ang,color,shots):
+    def __init__(self,x,y,ang,color,shots,id):
         self.x = x
         self.y = y 
         self.ang = ang * (math.pi/180)
@@ -26,10 +44,15 @@ class Shot():
         self.shots = shots
         shots.append(self)
         self.kill = False
+        self.id = id
 
     #Creates a string to be sent to the server
     def toString(self):
-        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ':'
+        if self.kill:
+            k = ",1"
+        else:
+            k = ',0'
+        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.id) + k + ':'
 
     #Entity movement logic
     def move(self):
@@ -40,14 +63,12 @@ class Shot():
             self.x -= util.wWidth
         
         if self.y > util.wHeight:
-            self.shots.remove(self)
             self.kill = True
 
         if self.x < 0:
             self.x = util.wWidth + self.x
 
         if self.y < 0:
-            self.shots.remove(self)
             self.kill = True
 
     #Draws this entity on 'win'
@@ -63,8 +84,10 @@ class Shot():
         if self.ttl > 0:
             self.ttl -= 1
         else:
-            if not self.kill: 
-                self.shots.remove(self)
+            self.kill = True
+            
+        if self.kill: 
+            self.shots.remove(self)
 
         self.a = (self.x,self.y)
         self.b = (self.x + self.size*math.cos(self.ang),self.y + self.size*math.sin(self.ang))
@@ -76,6 +99,7 @@ class Shot():
 #Class to define the client player
 class Player():
     def __init__(self,pos,color,shots,auto):
+        self.sId = 0
         self.auto = auto
         self.lastAction = 0
 
@@ -108,15 +132,7 @@ class Player():
         else:
             shld = ',0'
         return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.health) + shld + '_'
-
-    def health_bar(self,a,b):
-        rect = 0
-        d = ((a[0]+b[0])/2,(a[1]+b[1])/2)
-
         
-
-
-        return rect
 
     #Draws this entity on 'win'
     def draw(self, win):
@@ -137,10 +153,7 @@ class Player():
             pg.draw.circle(win,util.grey,c,4)
 
         pg.draw.polygon(win, self.color, self.triangle, fill)
-
-
-
-        life = ((),(),(),())
+        health_bar(self,win,a,b)
 
 
     #Entity movement logic
@@ -180,7 +193,7 @@ class Player():
 
         if rand > 95:
             eAuto = True
-        if rand < 10:
+        if rand < 5:
             spaceAuto = True
 
 
@@ -233,8 +246,6 @@ class Player():
                 else:
                     self.lastAction = 0
             
-        
-        print(aAuto,dAuto,eAuto,spaceAuto,"\n",self.ang)
         return aAuto,dAuto,eAuto,spaceAuto
 
     #Applies changes to entity when a key is pressed
@@ -272,7 +283,8 @@ class Player():
             if self.shotCooldown == 0:
                 self.shotCooldown = util.pShotCooldown
                 x,y = self.triangle[2]
-                Shot(x,y,self.ang,self.color,self.shots)
+                Shot(x,y,self.ang,self.color,self.shots,self.sId)
+                self.sId += 1
 
     #Updates entity per tick
     def update(self):
@@ -321,12 +333,20 @@ class Game():
                     fill = 0
                 #print("Draw player", k)
                 pg.draw.polygon(win, util.decode_color(self.sPlayers[k].color), self.sPlayers[k].triangle, fill)
-
+                a,b,_ = self.sPlayers[k].triangle
+                health_bar(self.sPlayers[k],win,a,b)
+                
         for s in self.sShots:
-            if s != None:
+            if hasattr(s,'color'):
                 if s.color != self.id:
                     #print("Draw shot",s.color)
                     pg.draw.line(win, util.decode_color(s.color), (s.x1,s.y1), (s.x2,s.y2), 2)
+                else:
+                    if s.kill == 1:
+                        for cs in self.shots:
+                            if s.id == cs.id:
+                                self.shots.remove(cs)
+
 
     def redraw_win(self,win):
         self.player.update()

@@ -18,6 +18,7 @@ class NetworkClient():
         self.clientPair = clientPair
         self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.inSocket.bind(self.clientPair)
+    
 
         self.packetID = 0
 
@@ -83,7 +84,6 @@ class NetworkClient():
             if len(s) > 2:
                 sh = util.sShot(s)
                 if sh != None:
-                    print(s)
                     self.game.sShots.append(sh)
 
     
@@ -163,8 +163,16 @@ class NetworkServer():
                     self.shots[p.color].append(util.sShot(s))
 
             self.sessionControl(p.color, packetID, currTime, addr, clientPort)
-
+            self.resolveHits()
             self.wakeClients.set()
+
+    def resolveHits(self):
+        for p in self.players.values():
+            for sl in self.shots.keys():
+                for s in self.shots[sl]:
+                    if p.color != s.color:
+                        s,p = util.resolve_colision(s,p)
+                        
 
 
     #Launches a client thread when a session is new or updates the session metrics
@@ -205,7 +213,6 @@ class NetworkServer():
         for c in self.shots.keys():
             for sh in self.shots[c]:
                 s += sh.toString()
-        
         return s
 
 
