@@ -98,7 +98,6 @@ class NetworkClient():
                 data = data.decode("utf-8")
                 packetID,playersStr,shotsStr = data.split(" ")
                 
-
                 fst = self.sessionControl(fst,packetID)
 
                 self.resolvePlayers(playersStr)
@@ -173,6 +172,7 @@ class NetworkServer():
                     if p.color != s.color:
                         s,p = util.resolve_colision(s,p)
                         
+                        
 
 
     #Launches a client thread when a session is new or updates the session metrics
@@ -186,7 +186,7 @@ class NetworkServer():
             self.metrics[color]['curr'] = int(packetID)
             self.metrics[color]['lost'] = 0
 
-            t = threading.Thread(target=self.clientHandler, args=(self.wakeClients,color,(addr[0],clientPort),))
+            t = threading.Thread(target=self.clientHandler, args=(color,(addr[0],clientPort),))
             t.start()
         else:
             self.metrics[color]['lastTime'] = time
@@ -217,7 +217,7 @@ class NetworkServer():
 
 
     #Server thread that runs a specififc client connection
-    def clientHandler(self,e,color,ipPort):
+    def clientHandler(self,color,ipPort):
         print("Player", color, "communication thread launched!\n        ", "client at",str(ipPort),"\n")
 
         outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
@@ -236,15 +236,18 @@ class NetworkServer():
                 del self.metrics[color]
                 del self.killSessions[color]
                 print("Player", color, "session timed out...") 
-                self.killSessions[color] = True   
-            
-            if self.killSessions[color]:
-                break
-
+                break  
+        
             message = self.generateMessage(packetID, color).encode("utf-8")
 
             outSocket.sendto(message,ipPort)
             packetID += 1
+            if self.players[color].health <= 0:
+                self.killSessions[color] = True
+                del self.players[color]
+                del self.shots[color]
+                del self.metrics[color]
+                del self.killSessions[color]
 
 
         outSocket.close()

@@ -1,7 +1,6 @@
 import math
 import argparse
 import random
-from tkinter import N
 
 #Game constants
 wWidth = 860 
@@ -24,7 +23,7 @@ pDefaultRotation = 3*(60/framerate)
 #Shot constants
 sDefaultVel = int(5*(60/framerate))
 sDefaultTTL = int(150*(framerate/60))
-sDefaultSize = 30
+sDefaultSize = 25
 sDamage = 20
 
 #Colors
@@ -170,7 +169,7 @@ def is_inside(triangle, x, y):
         return False
 
 def resolve_colision(shot, player):
-    if is_inside(player.triangle, shot.x1, shot.y1) or is_inside(player.triangle, shot.x2, shot.y2):
+    if is_inside(player.triangle, shot.x1, shot.y1) or is_inside(player.triangle, shot.x2, shot.y2) or is_inside(player.triangle, (shot.x1 + shot.x2)/2, (shot.y1 + shot.y2)/2):
         if player.health > 0:
             player.health -= sDamage
         else:

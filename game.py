@@ -391,8 +391,12 @@ class Game():
                     if event.type == pg.QUIT:
                         run = False
                         raise Exception("Quit")
-                
+
                 self.redraw_win(self.win)
+
+                if self.player.health <= 0:
+                    run = False
+                    raise Exception("Quit")
 
                 frameCounter += 1
                 if frameCounter >= util.netrate:
@@ -404,7 +408,6 @@ class Game():
             n.outSocket.close()
             pg.quit()
             exit()
-                
 
         
 
