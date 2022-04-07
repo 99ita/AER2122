@@ -21,10 +21,10 @@ pDefaultHealth = 100
 pDefaultRotation = 3*(60/framerate)
 
 #Shot constants
-sDefaultVel = int(5*(60/framerate))
-sDefaultTTL = int(150*(framerate/60))
+sDefaultVel = int(10*(60/framerate))
+sDefaultTTL = int(50*(framerate/60))
 sDefaultSize = 25
-sDamage = 20
+sDamage = 10
 
 #Colors
 black = (0,0,0) #1

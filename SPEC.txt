@@ -1,0 +1,19 @@
+Formato das mensagens trocadas
+
+
+Formatação de um jogador
+X,Y,angle,cor,vida,escudo
+
+Formatação de um tiro
+X,Y,angle,cor,id,flag
+
+
+
+Cliente -> Servidor
+
+PacketID Porta Jogador_Tiro1:Tiro2:Tiro3: 
+
+
+Servidor -> Cliente
+
+PacketID Jogador1:Jogador2: Tiro1:Tiro2:Tiro3:
