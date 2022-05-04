@@ -26,7 +26,7 @@ def health_bar(player,win,a,b):
 
     pg.draw.line(win, util.white, (aX,aY), (bX,bY), 4)
 
-#Class to define a client shots
+#Class to define a client shot
 class Shot():
     def __init__(self,x,y,ang,color,shots,id):
         self.x = x
