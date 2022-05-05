@@ -6,6 +6,7 @@ import math
 import network
 import util
 import random
+import struct
 
 def health_bar(player,win,a,b):
     width = (player.health/util.pDefaultHealth) * (util.pWidth*0.9)/2
@@ -47,12 +48,14 @@ class Shot():
         self.id = id
 
     #Creates a string to be sent to the server
-    def toString(self):
-        if self.kill:
+    def toBytes(self):
+        return bytearray(struct.pack('!fffhh?',self.x,self.y,self.ang,util.encode_color(self.color),self.id,self.kill))
+        '''if self.kill:
             k = ",1"
         else:
             k = ',0'
         return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.id) + k + ':'
+        '''
 
     #Entity movement logic
     def move(self):
@@ -126,7 +129,8 @@ class Player():
         
 
     #Creates a string to be sent to the server
-    def toString(self):    
+    def toBytes(self): 
+        return bytearray(struct.pack('!fffhh?',self.x,self.y,self.ang,util.encode_color(self.color),self.health,self.shield))   
         if self.shield:
             shld = ',1'
         else:
@@ -327,11 +331,12 @@ class Game():
             if k == self.id:
                 self.player.health = self.sPlayers[self.id].health
             else:
-                if self.sPlayers[k].shield == 0:
+                if self.sPlayers[k].shield == False:
                     fill = 2
                 else:
                     fill = 0
                 #print("Draw player", k)
+                print(self.sPlayers[k].color)
                 pg.draw.polygon(win, util.decode_color(self.sPlayers[k].color), self.sPlayers[k].triangle, fill)
                 a,b,_ = self.sPlayers[k].triangle
                 health_bar(self.sPlayers[k],win,a,b)
@@ -342,7 +347,7 @@ class Game():
                     #print("Draw shot",s.color)
                     pg.draw.line(win, util.decode_color(s.color), (s.x1,s.y1), (s.x2,s.y2), 2)
                 else:
-                    if s.kill == 1:
+                    if s.kill == True:
                         for cs in self.shots:
                             if s.id == cs.id:
                                 self.shots.remove(cs)

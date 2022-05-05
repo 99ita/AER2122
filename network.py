@@ -1,3 +1,4 @@
+import struct
 import traceback
 import socket
 from datetime import datetime
@@ -27,11 +28,15 @@ class NetworkClient():
         self.game = game
 
     def send(self,player,shots):
-        message = str(self.clientPair[1]) + " " + str(self.packetID) + " " + player.toString()
-        for s in shots:
-            message += s.toString()
         
-        self.outSocket.sendto(message.encode("utf-8"), self.serverPair)
+        #message = str(self.clientPair[1]) + " " + str(self.packetID) + " " + player.toBytes()
+        message = bytearray(struct.pack('!Hi',self.clientPair[1],self.packetID)) + player.toBytes()
+        for s in shots:
+            message += s.toBytes()
+        
+        
+
+        self.outSocket.sendto(message, self.serverPair)
         self.packetID += 1
 
 
@@ -68,40 +73,49 @@ class NetworkClient():
 
         return False
 
-    def resolvePlayers(self,str):
-        str = str.split(":")
+    def resolvePlayers(self,data):
         self.game.sPlayers = {}
-        for s in str:
-            if len(s) > 2:
-                p = util.sPlayer(s,0,0)
+        fst = 0
+        snd = 17
+        while True:
+            try:
+                p = util.sPlayer(data[fst:snd],0,0)
+                fst += 17
+                snd += 17
                 if p != None:
                     self.game.sPlayers[p.color] = p
+            except:
+                break
 
-    def resolveShots(self,str):
-        str = str.split(":")
+    def resolveShots(self,data):
         self.game.sShots = []
-        for s in str:
-            if len(s) > 2:
-                sh = util.sShot(s)
+        fst = 0
+        snd = 17
+        while snd <= len(data):
+            try:
+                sh = util.sShot(data[fst:snd])
+                fst += 17
+                snd += 17
                 if sh != None:
                     self.game.sShots.append(sh)
-
+            except:
+                break
     
 
     def serverListener(self):
         print("Server listener thread started...\n")
         fst = True
-        nPackets = 0
         try:
             while True:
                 data,addr = self.inSocket.recvfrom(1024)
-                data = data.decode("utf-8")
-                packetID,playersStr,shotsStr = data.split(" ")
+                packetID,nJogs = struct.unpack("!hh",data[:4])
+                playersBArr = data[4:4+(17*nJogs)]
+                shotsBArr = data[4+(17*nJogs):]
                 
                 fst = self.sessionControl(fst,packetID)
 
-                self.resolvePlayers(playersStr)
-                self.resolveShots(shotsStr)
+                self.resolvePlayers(playersBArr)
+                self.resolveShots(shotsBArr)
         except:
             print(traceback.format_exc())
             print("Server listener thread exiting!")
@@ -122,8 +136,6 @@ class NetworkServer():
         self.shots = {}
         self.players = {}
 
-        self.wakeClients = threading.Event()
-
         self.killSessions = {}
 
             
@@ -131,39 +143,34 @@ class NetworkServer():
     def run(self):
         print("Server started!\nWaiting for messages...\n")
         while True:
-            self.wakeClients.clear()
             try:
                 data,addr = self.inSocket.recvfrom(1024)
             except:
                 for k in self.killSessions.keys():
                     self.killSessions[k] = True
-
-                self.wakeClients.set()
                 
                 self.inSocket.close()
                 print("Server timed out!")
                 exit()
-            
-            decoded = data.decode("utf-8")
-            clientPort,packetID,decoded = decoded.split(' ')
-            playerStr,shotsStr = decoded.split('_')
-            shotsStr = shotsStr.split(':')
-
-            clientPort = int(clientPort)
-
-            currTime = datetime.utcnow()
-
-            p = util.sPlayer(playerStr,addr,clientPort)
+            clientPort,packetID = struct.unpack('!Hi',data[:6])
+            playerArr = data[6:23]
+            p = util.sPlayer(playerArr,addr,clientPort)
             self.players[p.color] = p
 
             self.shots[p.color] = []
-            for s in shotsStr:
-                if len(s) > 2:
-                    self.shots[p.color].append(util.sShot(s))
 
+            fst = 23
+            snd = 40
+            while snd <= len(data):
+                try:
+                    self.shots[p.color].append(util.sShot(data[fst:snd]))
+                    fst += 17
+                    snd += 17
+                except:
+                    break
+            currTime = datetime.utcnow()
             self.sessionControl(p.color, packetID, currTime, addr, clientPort)
             self.resolveHits()
-            self.wakeClients.set()
 
     def resolveHits(self):
         for p in self.players.values():
@@ -202,18 +209,16 @@ class NetworkServer():
     
     
     #Generates the message to send to a client
-    #packetid_vida jogador_jogador_ tiro_tiro_
-    def generateMessage(self, packetID, color):
-        s = str(packetID) + " "
+    def generateMessage(self, packetID):
+        b = bytearray(struct.pack('!hh',packetID,len(self.players.keys()))) 
 
-        for c in self.players.keys():
-            s += self.players[c].toString()
-        s += " "
+        for p in self.players.keys():
+            b += self.players[p].toBytes()
 
-        for c in self.shots.keys():
-            for sh in self.shots[c]:
-                s += sh.toString()
-        return s
+        for s in self.shots.keys():
+            for sh in self.shots[s]:
+                b += sh.toBytes()
+        return b
 
 
     #Server thread that runs a specififc client connection
@@ -237,9 +242,7 @@ class NetworkServer():
                 del self.killSessions[color]
                 print("Player", color, "session timed out...") 
                 break  
-        
-            message = self.generateMessage(packetID, color).encode("utf-8")
-
+            message = self.generateMessage(packetID)
             outSocket.sendto(message,ipPort)
             packetID += 1
             if self.players[color].health <= 0:

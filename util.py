@@ -1,6 +1,7 @@
 import math
 import argparse
 import random
+import struct
 
 #Game constants
 wWidth = 860 
@@ -171,10 +172,11 @@ def is_inside(triangle, x, y):
 def resolve_colision(shot, player):
     if is_inside(player.triangle, shot.x1, shot.y1) or is_inside(player.triangle, shot.x2, shot.y2) or is_inside(player.triangle, (shot.x1 + shot.x2)/2, (shot.y1 + shot.y2)/2):
         if player.health > 0:
-            player.health -= sDamage
+            if not player.shield: 
+                player.health -= sDamage
         else:
             player.health = 0
-        shot.kill = 1
+        shot.kill = True
 
     return shot,player
 
@@ -184,38 +186,29 @@ def resolve_colision(shot, player):
 class sShot():
     def __init__(self,data):
         try:
-            aux = data.split(',')
-            self.x1 = float(aux[0])
-            self.y1 = float(aux[1])
-            self.ang = float(aux[2])
-            self.color = int(aux[3])
-            self.id = int(aux[4])
-            self.kill = int(aux[5])
+            self.x1,self.y1,self.ang,self.color,self.id,self.kill = struct.unpack('!fffhh?', data)
+
             self.x2 = self.x1 + sDefaultSize*math.cos(self.ang)
             self.y2 = self.y1 + sDefaultSize*math.sin(self.ang)
         except:
             return None
 
-    def toString(self):
+    def toBytes(self):
+        return bytearray(struct.pack('!fffhh?',self.x1,self.y1,self.ang,self.color,self.id,self.kill))   
         return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.id) + ',' + str(self.kill) + ':'
 
 class sPlayer():
     def __init__(self,data,addr,port):
         try:
-            aux = data.split(',')
-            self.x = float(aux[0])
-            self.y = float(aux[1])
-            self.ang = float(aux[2])
-            self.color = int(aux[3])
-            self.health = int(aux[4])
-            self.shield = int(aux[5])
+            self.x,self.y,self.ang,self.color,self.health,self.shield = struct.unpack('!fffhh?', data)
             
             self.triangle = generate_triangle((self.x,self.y), pWidth, pHeight, self.ang)
             self.addr = addr
             self.port = port
         except:
             return None
-    def toString(self):
+    def toBytes(self):
+        return bytearray(struct.pack('!fffhh?',self.x,self.y,self.ang,self.color,self.health,self.shield))   
         return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.health) + ',' + str(self.shield) + ':'
 
 

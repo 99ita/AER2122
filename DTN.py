@@ -42,8 +42,6 @@ class Beacon():
 
     def beacon_receiver(self):
         while True:
-            
-
             data, addr = self.sock.recvfrom(1024)
 
             if addr[0] in gateway_routers:
