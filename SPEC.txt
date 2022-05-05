@@ -1,19 +1,24 @@
 Formato das mensagens trocadas
 
+i/f - 4bytes
+h/H - 2bytes
+?/c - 1byte   
 
 Formatação de um jogador
-X,Y,angle,cor,vida,escudo
+X Y angle cor vida escudo
+f f f     h   h    ?                                17bytes
 
 Formatação de um tiro
-X,Y,angle,cor,id,flag
-
+X Y angle cor id flag
+f f f     h   h  ?                                  17bytes
 
 
 Cliente -> Servidor
 
-PacketID Porta Jogador_Tiro1:Tiro2:Tiro3: 
-
+Porta PacketID Jogador Tiro1 Tiro2 Tiro3  
+H     i                                             4 + 2 + 17 + t*(17)
 
 Servidor -> Cliente
 
-PacketID Jogador1:Jogador2: Tiro1:Tiro2:Tiro3:
+PacketID nJog Jogador1 Jogador2 Tiro1 Tiro2 Tiro3 
+i        h                                          4 + 2 + nJog*17 + t*17
