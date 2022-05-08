@@ -2,76 +2,85 @@ import socket
 import struct
 import threading
 import time
-
-beacon_period = 1 #s
-gateway_routers = []
+import sys
 
 
-class Beacon():
 
-    def __init__(self):
-        self.gateway_count = 18313
+class Neighbours():
+
+    def __init__(self,gw,beacon_period = 1):
+        self.gw = gw
+        self.beacon_period = beacon_period
+
+        self.gateway_count = 0
+        if self.gw:
+            self.gateway_count = -1
 
         self.neighbours = {}
-
-        self.ip = "2001:55:66:77"
-        self.port = 5555
 
         self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('', 8080))
-        self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, True)
+        self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
         mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, "ff02::abcd:1"), (chr(0) * 16).encode('utf-8'))
         self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+        
+        self.lock = threading.Lock()
         t1 = threading.Thread(target=self.beacon_receiver)
         t2 = threading.Thread(target=self.beacon_sender)
         t1.daemon = True
         t2.daemon = True
-        print("Starting beacon receiver and sender threads!")
         t1.start()
         t2.start()
-        return
-        
 
         
     def beacon_sender(self):
+        print("Beacon sender thread started!")
         while True:
             data = struct.pack("i",self.gateway_count)
             self.sock.sendto(data, ("ff02::abcd:1", 8080))
-            time.sleep(2)
+            self.check_neighbour_timeout()
+            time.sleep(self.beacon_period)
 
     def beacon_receiver(self):
+        print("Beacon sender thread started!")
         while True:
             data, addr = self.sock.recvfrom(1024)
 
-            if addr[0] in gateway_routers:
-                self.gateway_count += 1
-
+            self.lock.acquire()
             if not addr[0] in self.neighbours:
                 self.neighbours[addr[0]] = {}
                 print(f"Neighbour at {addr[0]} connected!")
 
             c = struct.unpack("i",data)
-            
+            if c == -1 and not self.gw:
+                self.gateway_count += 1
+
             self.neighbours[addr[0]]["gw_count"] = c
             self.neighbours[addr[0]]["time"] = time.time()
-
-            self.check_neighbour_timeout()
 
             print(data)
             print(addr)
             print(self.neighbours)
+
+            self.lock.release()
             
     def check_neighbour_timeout(self):
+        to = []
         for addr in self.neighbours.keys():
-            if time.time() - self.neighbours[addr]["time"] > 1:
+            if time.time() - self.neighbours[addr]["time"] > self.beacon_period:
                 print(f"Neighbour at {addr} timed out!")
-                del self.neighbours[addr]
+                to.append(addr)
+        for addr in to:
+            del self.neighbours[addr]
 
     def best_neighbour_addr(self):
+        self.lock.acquire()
         best_addr = None
         fst = True
         for addr in self.neighbours.keys():
+            if self.neighbours[addr]["gw_count"] == -1:
+                return addr
             if fst:
                 best = self.neighbours[addr]["gw_count"]
                 best_addr = addr
@@ -80,12 +89,47 @@ class Beacon():
                 if self.neighbours[addr]["gw_count"] > best:
                     best = self.neighbours[addr]["gw_count"]
                     best_addr = addr
+        if self.gateway_count >= best_addr:
+            return None
+        self.lock.release()
         return best_addr
                     
 class Forwarder():
-    def send_packet(self):
-        return
+    def __init__(self, gw, dtn_pair, server_pair):
+        self.dtn_port = dtn_pair[1]
+        self.server_pair = server_pair
+        
+        self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        self.inSocket.bind(dtn_pair)
+        self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+
+        self.neighbours = Neighbours(gw)
+        self.gw = gw
+
+        while True:
+            try:
+                data,addr = self.inSocket.recvfrom(1024)
+            except:
+                self.inSocket.close()
+                self.outSocket.close()
+                exit()
+
+            print(f"Packet received from {addr[0]}")
+            self.send_packet(data)
+
+    
+    
+    def send_packet(self, data):
+        if self.gw:
+            print(f"Sending packet to server")
+            self.outSocket.sendto(data,self.server_pair)
+        else:
+            nextHop = self.neighbours.best_neighbour_addr()
+            if nextHop:
+                self.outSocket.sendto(data,(nextHop,self.dtn_port))
+            else:
+                print("Packet dropped")
 
 
-Beacon()
-time.sleep(5)
+if __name__ == "__main__":
+    f = Forwarder(False,(sys.argv[1],int(sys.argv[2])),(sys.argv[3],int(sys.argv[4])))

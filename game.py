@@ -131,12 +131,12 @@ class Player():
     #Creates a string to be sent to the server
     def toBytes(self): 
         return bytearray(struct.pack('!fffhh?',self.x,self.y,self.ang,util.encode_color(self.color),self.health,self.shield))   
-        if self.shield:
+        '''if self.shield:
             shld = ',1'
         else:
             shld = ',0'
         return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.health) + shld + '_'
-        
+        '''
 
     #Draws this entity on 'win'
     def draw(self, win):
