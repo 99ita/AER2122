@@ -81,6 +81,26 @@ def decode_color(color):
 ########################################################################################################
 
 #Arguments parsers
+def dtnParsing():
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('dtn', 
+                        metavar=('ip','neighbour port','server port'),
+                        help='Node IP(v6) and ports',
+                        type=str,
+                        nargs=3,
+                        default=['::1','5555','6666'])
+    parser.add_argument('-gw',
+                        metavar=('ip','port'),
+                        help='Server IP(v6) and port',
+                        type=str,
+                        nargs=2,
+                        default=['::1','5556'])
+    a = parser.parse_args()
+    b = True
+    if a.gw[0] == '::1':
+        b = False
+    return (a.dtn[0],int(a.dtn[1])),int(a.dtn[2]),b,(a.gw[0],int(a.gw[1]))
+    
 def clientParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('id',
@@ -101,9 +121,19 @@ def clientParsing():
     parser.add_argument('-a',
                         help='Auto client',
                         action='store_true')
+    parser.add_argument('-m',
+                        metavar=('ip','neighbour port','server port'),
+                        help='Node IP(v6) and ports',
+                        type=str,
+                        nargs=3,
+                        default=['::1','5555','6666'])
     a = parser.parse_args()
     
-    return a.id,(a.s[0],int(a.s[1])),(a.c[0],int(a.c[1])),a.a
+    mob = True
+    if a.m[0] == '::1':
+        mob = False
+
+    return a.id,(a.s[0],int(a.s[1])),(a.c[0],int(a.c[1])),a.a,mob,(a.m[0],int(a.m[1])),int(a.m[2])
     
 def serverParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

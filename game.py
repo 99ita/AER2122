@@ -310,7 +310,7 @@ class Player():
 #Class to launch the game client
 class Game():
     def __init__(self):
-        self.id, self.serverPair, self.clientPair, auto = util.clientParsing()
+        self.id, self.serverPair, self.clientPair, auto, self.mobile, self.dtn_pair, self.serverlp = util.clientParsing()
 
         self.win = pg.display.set_mode((util.wWidth,util.wHeight))
         pg.display.set_caption("MicroShips")
@@ -380,7 +380,7 @@ class Game():
         #if q:
          #   exit()
 
-        n = network.NetworkClient(self.serverPair,self.clientPair,self)
+        n = network.NetworkClient(self)
         t = threading.Thread(target=n.serverListener)
         t.daemon = True
         t.start()

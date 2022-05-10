@@ -6,52 +6,65 @@ import threading
 import util
 import pygame as pg
 import time
+import dtn
 
 
 printInterval = 3*(util.framerate/util.netrate)
 
 #Network class for the client communications
 class NetworkClient():
-    def __init__(self, serverPair, clientPair, game):
+    def __init__(self, game):
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.serverPair = serverPair
 
-        self.clientPair = clientPair
-        self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.inSocket.bind(self.clientPair)
-    
+        self.serverPair = game.serverPair
+        self.clientPair = game.clientPair
+
+        self.mobile = game.mobile
+        self.dtn_pair = game.dtn_pair
+        self.serverlp = game.serverlp
+
+        self.game = game
+
+        if self.mobile:
+            self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+            self.inSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.inSocket.bind(('', 8080))
+            self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
+            mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, dtn.game_mcast[0]), (chr(0) * 16).encode('utf-8'))
+            self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+            self.dtn = dtn.Forwarder(self.dtn_pair,self.serverlp)
+        else:   
+            self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+            self.inSocket.bind(self.clientPair)
+            self.dtn = None
 
         self.packetID = 0
 
         self.metrics = {}
-
-        self.game = game
+            
 
     def send(self,player,shots):
-        
-        #message = str(self.clientPair[1]) + " " + str(self.packetID) + " " + player.toBytes()
         message = bytearray(struct.pack('!Hi',self.clientPair[1],self.packetID)) + player.toBytes()
         for s in shots:
             message += s.toBytes()
         
-        
-
-        self.outSocket.sendto(message, self.serverPair)
+        if self.mobile:
+            self.dtn.send_packet(message)
+        else:
+            self.outSocket.sendto(message, self.serverPair)
+    
         self.packetID += 1
 
 
     def sessionControl(self,fst,packetID):
         self.metrics['now'] = time.time()
         if fst:
-            nPackets = 0
             self.metrics['lastPrinted'] = -10000
             self.metrics['first'] = int(packetID)
             self.metrics['curr'] = int(packetID)
             self.metrics['lost'] = 0
             self.metrics['nPackets'] = 0
             self.metrics['lastTime'] = time.time()
-
-
         else:
             self.metrics['nPackets'] += 1
             self.metrics['last'] = self.metrics['curr']
@@ -64,9 +77,9 @@ class NetworkClient():
                 dif = self.metrics['nPackets']/(self.metrics['now']-self.metrics['lastTime'])
             self.metrics['lastPrinted'] = self.metrics['curr']
             lossPerc = self.metrics['lost']/(self.metrics['curr'] - self.metrics['first'] + 1)
-            print("Current packetID: ", packetID)
-            print("        ", "lost ", self.metrics['lost'], " packets so far (" , lossPerc , "%)") 
-            print("        ", dif, "packets/s")
+            print(f"Current packetID: {packetID}")
+            print(f"        lost {self.metrics['lost']} packets so far ({lossPerc}%)") 
+            print(f"        {dif}packets/s")
             self.metrics['nPackets'] = 0
             self.metrics['lastTime'] = self.metrics['now']
 
@@ -251,6 +264,7 @@ class NetworkServer():
                 del self.shots[color]
                 del self.metrics[color]
                 del self.killSessions[color]
+                break
 
 
         outSocket.close()

@@ -2,8 +2,11 @@ import socket
 import struct
 import threading
 import time
-import sys
+from tkinter import N
+import util
 
+neighbour_mcast = ("ff02::abcd:1",8080)
+game_mcast = ("ff02::dcba:1",6666)
 
 
 class Neighbours():
@@ -22,7 +25,7 @@ class Neighbours():
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(('', 8080))
         self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
-        mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, "ff02::abcd:1"), (chr(0) * 16).encode('utf-8'))
+        mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, neighbour_mcast[0]), (chr(0) * 16).encode('utf-8'))
         self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
         
         self.lock = threading.Lock()
@@ -38,7 +41,7 @@ class Neighbours():
         print("Beacon sender thread started!")
         while True:
             data = struct.pack("i",self.gateway_count)
-            self.sock.sendto(data, ("ff02::abcd:1", 8080))
+            self.sock.sendto(data, neighbour_mcast)
             self.check_neighbour_timeout()
             time.sleep(self.beacon_period)
 
@@ -95,29 +98,66 @@ class Neighbours():
         return best_addr
                     
 class Forwarder():
-    def __init__(self, gw, dtn_pair, server_pair):
+    def __init__(self, dtn_pair, server_listen_port, gw = False, server_pair = None):
         self.dtn_port = dtn_pair[1]
         self.server_pair = server_pair
+        self.server_listen_port = server_listen_port
         
-        self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.inSocket.bind(dtn_pair)
+        self.neighbour_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        self.neighbour_in_socket.bind(dtn_pair)
+
+        self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        self.server_in_socket.bind((dtn_pair[0],server_listen_port))
+
+        
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 
         self.neighbours = Neighbours(gw)
         self.gw = gw
+        if gw:
+            server_listen_thread = threading.Thread(target = self.server_listener)
+            server_listen_thread.daemon = True
+            server_listen_thread.start()
+        
+        neighbour_listen_thread = threading.Thread(target = self.wait_message)
+        neighbour_listen_thread.daemon = True
+        neighbour_listen_thread.start()
 
+
+    def wait_message(self):
         while True:
             try:
-                data,addr = self.inSocket.recvfrom(1024)
+                data,addr = self.neighbour_in_socket.recvfrom(1024)
             except:
-                self.inSocket.close()
+                self.neighbour_in_socket.close()
                 self.outSocket.close()
                 exit()
 
             print(f"Packet received from {addr[0]}")
             self.send_packet(data)
 
-    
+
+
+    def server_listener(self):
+        print("Server listener thread started!")
+        mcast_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        mcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        mcast_socket.bind(('', 8080))
+        mcast_socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
+        mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, game_mcast[0]), (chr(0) * 16).encode('utf-8'))
+        mcast_socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+        
+        while True:
+            try:
+                data,addr = self.server_in_socket.recvfrom(1024)
+            except:
+                self.server_in_socket.close()
+                exit()
+
+            mcast_socket.sendto(data,game_mcast)
+
+            print(f"Packet received from server and forwarded to multicast group!")
+
     
     def send_packet(self, data):
         if self.gw:
@@ -131,5 +171,6 @@ class Forwarder():
                 print("Packet dropped")
 
 
+
 if __name__ == "__main__":
-    f = Forwarder(False,(sys.argv[1],int(sys.argv[2])),(sys.argv[3],int(sys.argv[4])))
+    f = Forwarder(util.dtnParsing())
