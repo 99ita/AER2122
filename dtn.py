@@ -10,7 +10,6 @@ game_mcast = ("ff02::dcba:1",6666)
 
 
 class Neighbours():
-
     def __init__(self,gw,beacon_period = 1):
         self.gw = gw
         self.beacon_period = beacon_period
@@ -106,15 +105,13 @@ class Forwarder():
         self.neighbour_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.neighbour_in_socket.bind(dtn_pair)
 
-        self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.server_in_socket.bind((dtn_pair[0],server_listen_port))
-
-        
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 
         self.neighbours = Neighbours(gw)
         self.gw = gw
         if gw:
+            self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+            self.server_in_socket.bind((dtn_pair[0],server_listen_port))
             server_listen_thread = threading.Thread(target = self.server_listener)
             server_listen_thread.daemon = True
             server_listen_thread.start()

@@ -150,6 +150,7 @@ class NetworkServer():
         self.players = {}
 
         self.killSessions = {}
+        self.outIps = []
 
             
     #Server loop, listens and parses new messages on a port shared by all clients, and populates the data structures
@@ -206,8 +207,10 @@ class NetworkServer():
             self.metrics[color]['curr'] = int(packetID)
             self.metrics[color]['lost'] = 0
 
-            t = threading.Thread(target=self.clientHandler, args=(color,(addr[0],clientPort),))
-            t.start()
+            if not addr[0] in self.outIps:
+                t = threading.Thread(target=self.clientHandler, args=(color,(addr[0],clientPort),))
+                t.start()
+                self.outIps.append[addr[0]]
         else:
             self.metrics[color]['lastTime'] = time
             self.metrics[color]['last'] = self.metrics[color]['curr']
@@ -253,6 +256,7 @@ class NetworkServer():
                 del self.shots[color]
                 del self.metrics[color]
                 del self.killSessions[color]
+                self.outIps.remove(ipPort[0])
                 print("Player", color, "session timed out...") 
                 break  
             message = self.generateMessage(packetID)
@@ -264,6 +268,7 @@ class NetworkServer():
                 del self.shots[color]
                 del self.metrics[color]
                 del self.killSessions[color]
+                self.outIps.remove(ipPort[0])
                 break
 
 
