@@ -54,13 +54,16 @@ class Neighbours():
             c = struct.unpack("i",data[:4])
             data = data[4:]
             (i,), data = struct.unpack("I", data[:4]), data[4:]
-            neighbour_ip, data = data[:i], data[i:]
-
-            print(c,neighbour_ip)
+            neighbour_ip = data[:i].decode('utf-8')
 
             if not neighbour_ip in self.neighbours:
                 self.neighbours[neighbour_ip] = {}
-                print(f"Neighbour at {neighbour_ip} connected!")
+                if c != -1:
+                    print(f"Neighbour at {neighbour_ip} connected!")
+                else:
+                    print(f"Gateway router at {neighbour_ip} connected!")
+
+
 
             if c == -1 and not self.gw:
                 self.gateway_count += 1
@@ -74,7 +77,11 @@ class Neighbours():
         to = []
         for addr in self.neighbours.keys():
             if time.time() - self.neighbours[addr]["time"] > self.beacon_period:
-                print(f"Neighbour at {addr} timed out!")
+                if self.neighbours[addr]["gw_count"] != -1:
+                    print(f"Neighbour at {addr} timed out!")
+                else:
+                    print(f"Gateway router at {addr} timed out!")
+
                 to.append(addr)
         for addr in to:
             del self.neighbours[addr]
