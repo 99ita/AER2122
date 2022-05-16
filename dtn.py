@@ -109,7 +109,9 @@ class Neighbours():
                 if self.neighbours[addr]["gw_count"] > best:
                     best = self.neighbours[addr]["gw_count"]
                     best_addr = addr
-
+        if self.gateway_count >= best:
+            return None
+        
         return best_addr
                     
 class Forwarder():
@@ -129,6 +131,7 @@ class Forwarder():
         if gw:
             self.wireless_clients = []
             self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+            print(f"insocket: {(listeningIP,util.gamePort)}")
             self.server_in_socket.bind((listeningIP,util.gamePort))
             server_listener_thread = threading.Thread(target=self.server_listener)
             server_listener_thread.daemon = True
@@ -178,6 +181,7 @@ class Forwarder():
                 exit()
 
             for addr in self.wireless_clients:
+                print(f"Sending packet to {addr}!")
                 socketToWan.sendto(data,(addr,util.gamePort))
 
             print(f"Packet received from server and forwarded to all wireless clients!")
