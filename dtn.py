@@ -10,8 +10,9 @@ game_mcast = ("ff02::dcba:1",6666)
 
 
 class Neighbours():
-    def __init__(self,gw,beacon_period = 1):
+    def __init__(self,gw,ip,beacon_period = 1):
         self.gw = gw
+        self.ip = ip
         self.beacon_period = beacon_period
 
         self.gateway_count = 0
@@ -37,8 +38,10 @@ class Neighbours():
         
     def beacon_sender(self):
         print("Beacon sender thread started!")
+        s = bytes(self.ip, 'utf-8')
         while True:
             data = struct.pack("i",self.gateway_count)
+            data += struct.pack("I%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
             self.check_neighbour_timeout()
             time.sleep(self.beacon_period)
@@ -47,17 +50,23 @@ class Neighbours():
         print("Beacon receiver thread started!")
         while True:
             data, addr = self.sock.recvfrom(1024)
-            print(addr)
-            if not addr[0] in self.neighbours:
-                self.neighbours[addr[0]] = {}
-                print(f"Neighbour at {addr[0]} connected!")
 
-            c = struct.unpack("i",data)
+            c = struct.unpack("i",data[:4])
+            data = data[4:]
+            (i,), data = struct.unpack("I", data[:4]), data[4:]
+            neighbour_ip, data = data[:i], data[i:]
+
+            print(c,neighbour_ip)
+
+            if not neighbour_ip in self.neighbours:
+                self.neighbours[neighbour_ip] = {}
+                print(f"Neighbour at {neighbour_ip} connected!")
+
             if c == -1 and not self.gw:
                 self.gateway_count += 1
 
-            self.neighbours[addr[0]]["gw_count"] = c
-            self.neighbours[addr[0]]["time"] = time.time()
+            self.neighbours[neighbour_ip]["gw_count"] = c
+            self.neighbours[neighbour_ip]["time"] = time.time()
 
 
             
