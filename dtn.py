@@ -156,8 +156,9 @@ class Forwarder():
             (i,), data = struct.unpack("I", data[:4]), data[4:]
             clientIp, data = data[:i].decode('utf-8'), data[i:]
 
-            if clientIp not in self.wireless_clients:
-                self.wireless_clients.append(clientIp)
+            if self.gw:
+                if clientIp not in self.wireless_clients:
+                    self.wireless_clients.append(clientIp)
 
             print(f"Packet created by {clientIp} received from {addr[0]}")
             self.send_packet(data)
