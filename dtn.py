@@ -58,7 +58,7 @@ class Neighbours():
             if not neighbour_ip in self.neighbours:
                 self.neighbours[neighbour_ip] = {}
                 if c != -1:
-                    print(f"Neighbour at {neighbour_ip} connected!")
+                    print(f"Neighbour at {neighbour_ip} connected with a score of {c}!")
                 else:
                     print(f"Gateway router at {neighbour_ip} connected!")
 
