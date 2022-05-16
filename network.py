@@ -30,9 +30,7 @@ class NetworkClient():
             self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
             mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, dtn.game_mcast[0]), (chr(0) * 16).encode('utf-8'))
             self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
-            fwd = threading.Thread(target=dtn.Forwarder,args=(self.clientPair[0],))
-            fwd.daemon = True
-            fwd.start()
+            self.dtn = dtn.Forwarder(self.clientPair[0])
         else:   
             self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             print(self.clientPair)
