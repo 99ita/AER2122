@@ -382,7 +382,7 @@ class NetworkServer():
         print("Packet out thread started")
 
         outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        #outSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
+        outSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
         
         packetID = 0
         clock = pg.time.Clock()
