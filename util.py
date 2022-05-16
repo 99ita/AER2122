@@ -7,7 +7,6 @@ import struct
 #Network constants
 gamePort = 5555
 mobilePort = 5556
-gwServerPort = 5555
 
 #Game constants
 wWidth = 860 
@@ -94,15 +93,15 @@ def dtnParsing():
                         type=str)    
     parser.add_argument('-gw',
                         metavar=('ip'),
-                        help='Server IP(v6), port and server listening port',
+                        help='Server IP(v6), and gateway router listening IP(v6)',
                         type=str,
-                        nargs=1,
-                        default=['::1'])
+                        nargs=2,
+                        default=['::1','2001:10::2'])
     a = parser.parse_args()
     gw = True
     if a.gw[0] == '::1':
         gw = False
-    return a.ip,gw,a.gw[0]
+    return a.ip,gw,a.gw[0],a.gw[1]
     
 def clientParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -224,18 +223,16 @@ class sShot():
         return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.id) + ',' + str(self.kill) + ':'
 
 class sPlayer():
-    def __init__(self,data,addr,port):
+    def __init__(self,data,addr):
         try:
             self.x,self.y,self.ang,self.color,self.health,self.shield = struct.unpack('!fffhh?', data)
             
             self.triangle = generate_triangle((self.x,self.y), pWidth, pHeight, self.ang)
             self.addr = addr
-            self.port = port
         except:
             return None
     def toBytes(self):
         return bytearray(struct.pack('!fffhh?',self.x,self.y,self.ang,self.color,self.health,self.shield))   
-        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.health) + ',' + str(self.shield) + ':'
-
+        
 
 

@@ -2,7 +2,6 @@ import socket
 import struct
 import threading
 import time
-from tkinter import N
 import util
 
 neighbour_mcast = ("ff02::abcd:1",8080)
@@ -114,7 +113,7 @@ class Neighbours():
         return best_addr
                     
 class Forwarder():
-    def __init__(self, nodeIP, gw = False, server_pair = None, main = False):
+    def __init__(self, nodeIP, gw = False, server_pair = None, listeningIP = None, main = False):
         self.server_pair = server_pair
         self.nodeIP = nodeIP
         
@@ -130,7 +129,7 @@ class Forwarder():
         if gw:
             self.wireless_clients = []
             self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            self.server_in_socket.bind((nodeIP,util.gwServerPort))
+            self.server_in_socket.bind((listeningIP,util.gamePort))
             server_listener_thread = threading.Thread(target=self.server_listener)
             server_listener_thread.daemon = True
             server_listener_thread.start()
@@ -156,13 +155,11 @@ class Forwarder():
             if self.gw:
                 (i,), data = struct.unpack("I", data[:4]), data[4:]
                 clientIp, data = data[:i], data[i:]
-
-                print(clientIp.decode('utf-8'))
             
                 if clientIp not in self.wireless_clients:
                     self.wireless_clients.append(clientIp.decode('utf-8'))
 
-            print(f"Packet created by received from {addr[0]}")
+            print(f"Packet received from {addr[0]}")
             self.send_packet(data)
 
 
@@ -201,8 +198,8 @@ class Forwarder():
 
 
 if __name__ == "__main__":
-    nodeIP,gw,serverIP = util.dtnParsing()
+    nodeIP,gw,serverIP,listeningIP = util.dtnParsing()
     if gw:
-        f = Forwarder(nodeIP,gw,(serverIP,util.gamePort),main = True)
+        f = Forwarder(nodeIP,True,(serverIP,util.gamePort),listeningIP,main = True)
     else:
         f = Forwarder(nodeIP,main = True)

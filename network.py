@@ -36,7 +36,7 @@ class NetworkClient():
             
 
     def send(self,player,shots):
-        message = bytearray(struct.pack('!Hi',self.clientPair[1],self.packetID)) + player.toBytes()
+        message = bytearray(struct.pack('!i',self.packetID)) + player.toBytes()
         for s in shots:
             message += s.toBytes()
         
@@ -87,7 +87,7 @@ class NetworkClient():
         snd = 17
         while True:
             try:
-                p = util.sPlayer(data[fst:snd],0,0)
+                p = util.sPlayer(data[fst:snd],0)
                 fst += 17
                 snd += 17
                 if p != None:
@@ -161,15 +161,17 @@ class NetworkServer():
                 self.inSocket.close()
                 print("Server timed out!")
                 exit()
-            clientPort,packetID = struct.unpack('!Hi',data[:6])
-            playerArr = data[6:23]
-            p = util.sPlayer(playerArr,addr,clientPort)
+            packetID = struct.unpack('!i',data[:4])
+            
+
+            playerArr = data[4:21]
+            p = util.sPlayer(playerArr,addr)
             self.players[p.color] = p
 
             self.shots[p.color] = []
 
-            fst = 23
-            snd = 40
+            fst = 21
+            snd = 38
             while snd <= len(data):
                 try:
                     self.shots[p.color].append(util.sShot(data[fst:snd]))
@@ -178,7 +180,7 @@ class NetworkServer():
                 except:
                     break
             currTime = datetime.utcnow()
-            self.sessionControl(p.color, packetID, currTime, addr, clientPort)
+            self.sessionControl(p.color, packetID, currTime, addr, util.gamePort)
             self.resolveHits()
 
     def resolveHits(self):
