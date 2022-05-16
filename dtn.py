@@ -116,6 +116,7 @@ class Neighbours():
 class Forwarder():
     def __init__(self, nodeIP, gw = False, server_pair = None, main = False):
         self.server_pair = server_pair
+        self.nodeIP = nodeIP
         
         self.neighbour_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.neighbour_in_socket.bind((nodeIP,util.mobilePort))
@@ -125,13 +126,15 @@ class Forwarder():
         self.neighbours = Neighbours(gw,nodeIP)
 
         self.gw = gw
-        '''if gw:
+
+        if gw:
+            self.wireless_clients = []
             self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             self.server_in_socket.bind((nodeIP,util.gwServerPort))
             server_listener_thread = threading.Thread(target=self.server_listener)
             server_listener_thread.daemon = True
-            server_listener_thread.start()'''
-        
+            server_listener_thread.start()
+
         if main:
             self.wait_message()
         else:
@@ -150,33 +153,42 @@ class Forwarder():
                 self.outSocket.close()
                 exit()
 
-            print(f"Packet received from {addr[0]}")
+            (i,), data = struct.unpack("I", data[:4]), data[4:]
+            clientIp, data = data[:i].decode('utf-8'), data[i:]
+
+            if clientIp not in self.wireless_clients:
+                self.wireless_clients.append(clientIp)
+
+            print(f"Packet created by {clientIp} received from {addr[0]}")
             self.send_packet(data)
 
 
 
-    '''def server_listener(self):
+    def server_listener(self):
         print("Server listener thread started!")
-        mcast_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        mcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        mcast_socket.bind(('', game_mcast[1]))
-        mcast_socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
-        mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, game_mcast[0]), (chr(0) * 16).encode('utf-8'))
-        mcast_socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+        socketToWan = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        
         
         while True:
+            print(f"\nWClients {self.wireless_clients}\n")
             try:
-                data,addr = self.server_in_socket.recvfrom(1024)
+                data, = self.server_in_socket.recvfrom(1024)
             except:
                 self.server_in_socket.close()
                 exit()
 
-            mcast_socket.sendto(data,game_mcast)
+            for addr in self.wireless_clients:
+                socketToWan.sendto(data,(addr,util.gamePort))
 
-            print(f"Packet received from server and forwarded to multicast group!")
-    '''
+            print(f"Packet received from server and forwarded to all wireless clients!")
     
-    def send_packet(self, data):
+    
+    def send_packet(self, data, original = False):
+        if original:
+            s = bytes(self.nodeIP,'utf-8')
+            header = struct.pack("I%ds" % (len(s),), len(s), s)
+            data = header + data
+        
         if self.gw:
             print(f"Sending packet to server at {self.server_pair}")
             self.outSocket.sendto(data,self.server_pair)

@@ -1,4 +1,3 @@
-from concurrent.futures import thread
 import struct
 import traceback
 import socket
@@ -24,28 +23,13 @@ class NetworkClient():
 
         self.game = game
 
-        '''if self.mobile:
-            self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-            self.inSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.inSocket.bind(('', dtn.game_mcast[1]))
-            self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
-            mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, dtn.game_mcast[0]), (chr(0) * 16).encode('utf-8'))
-            self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
-            self.dtn = dtn.Forwarder(self.clientPair[0])
-        else:   
-            self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            self.inSocket.bind(self.clientPair)
-            self.dtn = None'''
-        self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.inSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.inSocket.bind(('', dtn.game_mcast[1]))
-        self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
-        mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, dtn.game_mcast[0]), (chr(0) * 16).encode('utf-8'))
-        self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
+
+        self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        self.inSocket.bind(self.clientPair)
         
         if self.mobile:
             self.dtn = dtn.Forwarder(self.clientPair[0])
-
+         
         self.packetID = 0
 
         self.metrics = {}
@@ -57,7 +41,7 @@ class NetworkClient():
             message += s.toBytes()
         
         if self.mobile:
-            self.dtn.send_packet(message)
+            self.dtn.send_packet(message,original=True)
         else:
             self.outSocket.sendto(message, self.serverPair)
     
@@ -146,7 +130,7 @@ class NetworkClient():
 
         
 #Network class for the server communications
-'''class NetworkServer():
+class NetworkServer():
     def __init__(self, serverPair, timeout):
         self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.inSocket.bind(serverPair)
@@ -281,122 +265,5 @@ class NetworkClient():
 
 
         outSocket.close()
-        print("Player", color, "communication thread terminated!")'''
+        print("Player", color, "communication thread terminated!")
     
-
-
-class NetworkServer():
-    def __init__(self, serverPair, timeout):
-        self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.inSocket.bind(serverPair)
-        self.timeout = timeout
-        self.inSocket.settimeout(10)
-        
-        self.metrics = {}
-        self.shots = {}
-        self.players = {}
-
-
-            
-    #Server loop, listens and parses new messages on a port shared by all clients, and populates the data structures
-    def run(self):
-
-        print("Server started!\nWaiting for messages...\n")
-        outT = threading.Thread(target=self.outThread)
-        outT.daemon = True
-        outT.start()
-        while True:
-            try:
-                data,addr = self.inSocket.recvfrom(1024)
-            except:
-                self.inSocket.close()
-                print("Server timed out!")
-                exit()
-
-            clientPort,packetID = struct.unpack('!Hi',data[:6])
-            playerArr = data[6:23]
-            p = util.sPlayer(playerArr,addr,clientPort)
-            self.players[p.color] = p
-
-            self.shots[p.color] = []
-
-            fst = 23
-            snd = 40
-            while snd <= len(data):
-                try:
-                    self.shots[p.color].append(util.sShot(data[fst:snd]))
-                    fst += 17
-                    snd += 17
-                except:
-                    break
-            currTime = datetime.utcnow()
-            self.sessionControl(p.color, packetID, currTime, addr, clientPort)
-            self.resolveHits()
-
-    def resolveHits(self):
-        for p in self.players.values():
-            for sl in self.shots.keys():
-                for s in self.shots[sl]:
-                    if p.color != s.color:
-                        s,p = util.resolve_colision(s,p)
-                        
-                        
-    #Controls each client's session metrics
-    def sessionControl(self, color, packetID, time, addr, clientPort):
-        if not color in self.metrics:
-            self.metrics[color] = {}
-            self.metrics[color]['lastPrinted'] = -10000
-            self.metrics[color]['first'] = int(packetID)
-            self.metrics[color]['lastTime'] = time
-            self.metrics[color]['curr'] = int(packetID)
-            self.metrics[color]['lost'] = 0
-
-        else:
-            self.metrics[color]['lastTime'] = time
-            self.metrics[color]['last'] = self.metrics[color]['curr']
-            self.metrics[color]['curr'] = int(packetID)
-            self.metrics[color]['lost'] += self.metrics[color]['curr'] - self.metrics[color]['last'] - 1
-
-        if self.metrics[color]['curr'] - self.metrics[color]['lastPrinted'] >= printInterval:
-            self.metrics[color]['lastPrinted'] = self.metrics[color]['curr']
-            lossPerc = self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
-            print("Player", color, "current packetID: ", packetID)
-            print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , lossPerc , "%)\n") 
-    
-    
-    #Generates the message to send to a client
-    def generateMessage(self, packetID):
-        b = bytearray(struct.pack('!hh',packetID,len(self.players.keys()))) 
-
-        for p in self.players.keys():
-            b += self.players[p].toBytes()
-
-        for s in self.shots.keys():
-            for sh in self.shots[s]:
-                b += sh.toBytes()
-        return b
-
-
-    #Server thread that runs a specififc client connection
-    def outThread(self):
-        print("Packet out thread started")
-
-
-        outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        outSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        outSocket.bind(('', dtn.game_mcast[1]))
-        outSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
-        mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, dtn.game_mcast[0]), (chr(0) * 16).encode('utf-8'))
-        outSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
-        
-
-
-        packetID = 0
-        clock = pg.time.Clock()
-        while True:
-            clock.tick(int(util.framerate/util.netrate))
-
-            message = self.generateMessage(packetID)
-            outSocket.sendto(message,dtn.game_mcast)
-            print("sent to mcast")
-            packetID += 1
