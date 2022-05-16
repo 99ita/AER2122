@@ -6,7 +6,7 @@ from tkinter import N
 import util
 
 neighbour_mcast = ("ff02::abcd:1",8080)
-game_mcast = ("ff02::dcba:1",5557)
+game_mcast = ("ff02::dcba:1",8182)
 
 
 class Neighbours():
