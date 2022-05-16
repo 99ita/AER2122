@@ -154,8 +154,9 @@ class Forwarder():
                 exit()
 
             (i,), data = struct.unpack("I", data[:4]), data[4:]
-            clientIp, data = data[:i].decode('utf-8'), data[i:]
+            clientIp, data = data[:i], data[i:]
 
+            print(clientIp)
             if self.gw:
                 if clientIp not in self.wireless_clients:
                     self.wireless_clients.append(clientIp)
