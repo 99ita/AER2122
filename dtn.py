@@ -6,7 +6,7 @@ from tkinter import N
 import util
 
 neighbour_mcast = ("ff02::abcd:1",8080)
-game_mcast = ("ff02::dcba:1",6666)
+game_mcast = ("ff02::dcba:1",5557)
 
 
 class Neighbours():
@@ -159,7 +159,7 @@ class Forwarder():
         print("Server listener thread started!")
         mcast_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         mcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        mcast_socket.bind(('', 8080))
+        mcast_socket.bind(('', game_mcast[1]))
         mcast_socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
         mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, game_mcast[0]), (chr(0) * 16).encode('utf-8'))
         mcast_socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
