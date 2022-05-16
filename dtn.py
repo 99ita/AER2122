@@ -183,7 +183,7 @@ class Forwarder():
         else:
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop:
-                self.outSocket.sendto(data,(nextHop,self.dtn_port))
+                self.outSocket.sendto(data,(nextHop,util.mobilePort))
             else:
                 print("Packet dropped")
 
