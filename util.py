@@ -97,7 +97,7 @@ def dtnParsing():
                         help='Server IP(v6), port and server listening port',
                         type=str,
                         nargs=1,
-                        default='::1')
+                        default='2001:0::10')
     a = parser.parse_args()
     b = True
     if a.gw[0] == '::1':
