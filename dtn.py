@@ -106,17 +106,19 @@ class Forwarder():
         self.neighbour_in_socket.bind(dtn_pair)
 
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-
+        
         self.neighbours = Neighbours(gw)
+
+        neighbour_listen_thread = threading.Thread(target = self.wait_message)
+        neighbour_listen_thread.daemon = True
+        neighbour_listen_thread.start()
+        
         self.gw = gw
         if gw:
             self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             self.server_in_socket.bind((dtn_pair[0],server_listen_port))
-            server_listen_thread = threading.Thread(target = self.server_listener)
-            server_listen_thread.daemon = True
-            server_listen_thread.start()
-        
-        self.wait_message()
+            self.server_listener()       
+
 
 
 
