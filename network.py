@@ -256,6 +256,7 @@ class NetworkServer():
                 print("Player", color, "session timed out...") 
                 break  
             message = self.generateMessage(packetID)
+            print(f"Sending message to {ipPort}")
             outSocket.sendto(message,ipPort)
             packetID += 1
             if self.players[color].health <= 0:

@@ -177,6 +177,7 @@ class Forwarder():
             try:
                 data, = self.server_in_socket.recvfrom(1024)
             except:
+                print("Server listener died!")
                 self.server_in_socket.close()
                 exit()
 
