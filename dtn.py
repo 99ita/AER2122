@@ -116,7 +116,6 @@ class Neighbours():
 class Forwarder():
     def __init__(self, nodeIP, gw = False, server_pair = None, main = False):
         self.server_pair = server_pair
-        self.server_listen_port = util.gwServerPort
         
         self.neighbour_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.neighbour_in_socket.bind((nodeIP,util.mobilePort))
@@ -128,7 +127,7 @@ class Forwarder():
         self.gw = gw
         if gw:
             self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            self.server_in_socket.bind((nodeIP,self.server_listen_port))
+            self.server_in_socket.bind((nodeIP,util.gwServerPort))
             server_listener_thread = threading.Thread(target=self.server_listener)
             server_listener_thread.daemon = True
             server_listener_thread.start()

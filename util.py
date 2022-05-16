@@ -6,7 +6,7 @@ import struct
 
 #Network constants
 gamePort = 5555
-mobilePort = 6666
+mobilePort = 5556
 gwServerPort = 5555
 
 #Game constants
