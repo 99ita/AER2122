@@ -108,7 +108,7 @@ class Forwarder():
 
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         
-        self.neighbours = Neighbours(gw)
+        self.neighbours = Neighbours(gw,nodeIP)
 
         self.gw = gw
         if gw:
