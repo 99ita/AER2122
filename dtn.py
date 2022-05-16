@@ -178,12 +178,11 @@ class Forwarder():
     
     def send_packet(self, data):
         if self.gw:
-            print(f"Sending packet to server")
+            print(f"Sending packet to server at {self.server_pair}")
             self.outSocket.sendto(data,self.server_pair)
         else:
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop:
-                print(nextHop)
                 self.outSocket.sendto(data,(nextHop,util.mobilePort))
             else:
                 print("Packet dropped")
