@@ -83,23 +83,23 @@ def decode_color(color):
 #Arguments parsers
 def dtnParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('dtn', 
-                        metavar=('ip','neighbour port'),
-                        help='Node IP(v6) and port',
-                        type=str,
-                        nargs=2,
-                        default=['::1','5555'])
+    parser.add_argument('ip', 
+                        help='Node IP(v6)',
+                        type=str)    
+    parser.add_argument('port', 
+                        help='Node port',
+                        type=int)
     parser.add_argument('-gw',
-                        metavar=('ip','port'),
-                        help='Server IP(v6) and port and server listening port',
+                        metavar=('ip','port','sv_port'),
+                        help='Server IP(v6), port and server listening port',
                         type=str,
-                        nargs=2,
+                        nargs=3,
                         default=['::1','5555','6666'])
     a = parser.parse_args()
     b = True
     if a.gw[0] == '::1':
         b = False
-    return (a.dtn[0],int(a.dtn[1])),b,(a.gw[0],int(a.gw[1])),int(a.gw[2])
+    return (a.ip,int(a.port)),b,(a.gw[0],int(a.gw[1])),int(a.gw[2])
     
 def clientParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
