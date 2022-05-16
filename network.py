@@ -210,7 +210,7 @@ class NetworkServer():
             if not addr[0] in self.outIps:
                 t = threading.Thread(target=self.clientHandler, args=(color,(addr[0],clientPort),))
                 t.start()
-                self.outIps.append[addr[0]]
+                self.outIps.append(addr[0])
         else:
             self.metrics[color]['lastTime'] = time
             self.metrics[color]['last'] = self.metrics[color]['curr']

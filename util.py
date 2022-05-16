@@ -122,7 +122,7 @@ def clientParsing():
                         help='Auto client',
                         action='store_true')
     parser.add_argument('-m',
-                        metavar=('ip','neighbour port','server port'),
+                        metavar=('ip','neighbour_port','server_port'),
                         help='Node IP(v6) and ports',
                         type=str,
                         nargs=3,
