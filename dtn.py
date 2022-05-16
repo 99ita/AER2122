@@ -153,15 +153,16 @@ class Forwarder():
                 self.outSocket.close()
                 exit()
 
-            (i,), data = struct.unpack("I", data[:4]), data[4:]
-            clientIp, data = data[:i], data[i:]
-
-            print(clientIp)
             if self.gw:
-                if clientIp not in self.wireless_clients:
-                    self.wireless_clients.append(clientIp)
+                (i,), data = struct.unpack("I", data[:4]), data[4:]
+                clientIp, data = data[:i], data[i:]
 
-            print(f"Packet created by {clientIp} received from {addr[0]}")
+                print(clientIp.decode('utf-8'))
+            
+                if clientIp not in self.wireless_clients:
+                    self.wireless_clients.append(clientIp.decode('utf-8'))
+
+            print(f"Packet created by received from {addr[0]}")
             self.send_packet(data)
 
 
@@ -185,12 +186,7 @@ class Forwarder():
             print(f"Packet received from server and forwarded to all wireless clients!")
     
     
-    def send_packet(self, data, original = False):
-        if original:
-            s = bytes(self.nodeIP,'utf-8')
-            header = struct.pack("I%ds" % (len(s),), len(s), s)
-            data = header + data
-        
+    def send_packet(self, data):
         if self.gw:
             print(f"Sending packet to server at {self.server_pair}")
             self.outSocket.sendto(data,self.server_pair)
@@ -198,6 +194,7 @@ class Forwarder():
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop:
                 self.outSocket.sendto(data,(nextHop,util.mobilePort))
+                print(f"Sending packet to best neighbour ({nextHop})")
             else:
                 print("Packet dropped")
 

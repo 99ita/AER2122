@@ -41,7 +41,10 @@ class NetworkClient():
             message += s.toBytes()
         
         if self.mobile:
-            self.dtn.send_packet(message,original=True)
+            s = self.clientPair[0].encode('utf-8')
+            header = struct.pack("I%ds" % (len(s),), len(s), s)
+            message = header + message
+            self.dtn.send_packet(message)
         else:
             self.outSocket.sendto(message, self.serverPair)
     
