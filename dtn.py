@@ -27,7 +27,6 @@ class Neighbours():
         mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, neighbour_mcast[0]), (chr(0) * 16).encode('utf-8'))
         self.sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
         
-        self.lock = threading.Lock()
         t1 = threading.Thread(target=self.beacon_receiver)
         t2 = threading.Thread(target=self.beacon_sender)
         t1.daemon = True
@@ -49,7 +48,6 @@ class Neighbours():
         while True:
             data, addr = self.sock.recvfrom(1024)
 
-            self.lock.acquire()
             if not addr[0] in self.neighbours:
                 self.neighbours[addr[0]] = {}
                 print(f"Neighbour at {addr[0]} connected!")
@@ -65,7 +63,6 @@ class Neighbours():
             print(addr)
             print(self.neighbours)
 
-            self.lock.release()
             
     def check_neighbour_timeout(self):
         to = []
@@ -77,7 +74,6 @@ class Neighbours():
             del self.neighbours[addr]
 
     def best_neighbour_addr(self):
-        self.lock.acquire()
         best_addr = None
         fst = True
         for addr in self.neighbours.keys():
@@ -93,17 +89,16 @@ class Neighbours():
                     best_addr = addr
         if self.gateway_count >= best_addr:
             return None
-        self.lock.release()
+
         return best_addr
                     
 class Forwarder():
-    def __init__(self, dtn_pair, gw = False, server_pair = None, server_listen_port = 0):
-        self.dtn_port = dtn_pair[1]
+    def __init__(self, nodeIP, gw = False, server_pair = None):
         self.server_pair = server_pair
-        self.server_listen_port = server_listen_port
+        self.server_listen_port = util.gwServerPort
         
         self.neighbour_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        self.neighbour_in_socket.bind(dtn_pair)
+        self.neighbour_in_socket.bind((nodeIP,util.mobilePort))
 
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         
@@ -116,7 +111,7 @@ class Forwarder():
         self.gw = gw
         if gw:
             self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            self.server_in_socket.bind((dtn_pair[0],server_listen_port))
+            self.server_in_socket.bind((nodeIP,self.server_listen_port))
             self.server_listener()       
 
 
@@ -171,9 +166,9 @@ class Forwarder():
 
 
 if __name__ == "__main__":
-    dtn_pair,gw,server_pair,server_listen_port = util.dtnParsing()
+    nodeIP,gw,serverIP = util.dtnParsing()
     if gw:
 
-        f = Forwarder(dtn_pair,gw,server_pair,server_listen_port)
+        f = Forwarder(nodeIP,gw,(serverIP,util.gamePort))
     else:
-        f = Forwarder(dtn_pair)
+        f = Forwarder(nodeIP)

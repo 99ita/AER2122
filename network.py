@@ -20,19 +20,19 @@ class NetworkClient():
         self.clientPair = game.clientPair
 
         self.mobile = game.mobile
-        self.dtn_pair = game.dtn_pair
-        self.serverlp = game.serverlp
 
         self.game = game
 
         if self.mobile:
             self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
             self.inSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.inSocket.bind(('', 8080))
+            self.inSocket.bind(('', dtn.game_mcast[1]))
             self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
             mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, dtn.game_mcast[0]), (chr(0) * 16).encode('utf-8'))
             self.inSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
-            self.dtn = dtn.Forwarder(self.dtn_pair,self.serverlp)
+            fwd = threading.Thread(target=dtn.Forwarder,args=(self.clientPair[0],))
+            fwd.daemon = True
+            fwd.start()
         else:   
             self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             self.inSocket.bind(self.clientPair)

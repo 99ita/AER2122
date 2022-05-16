@@ -3,6 +3,12 @@ import argparse
 import random
 import struct
 
+
+#Network constants
+gamePort = 5555
+mobilePort = 6666
+gwServerPort = 5555
+
 #Game constants
 wWidth = 860 
 wHeight = 640 
@@ -86,20 +92,17 @@ def dtnParsing():
     parser.add_argument('ip', 
                         help='Node IP(v6)',
                         type=str)    
-    parser.add_argument('port', 
-                        help='Node port',
-                        type=int)
     parser.add_argument('-gw',
-                        metavar=('ip','port','sv_port'),
+                        metavar=('ip'),
                         help='Server IP(v6), port and server listening port',
                         type=str,
-                        nargs=3,
-                        default=['::1','5555','6666'])
+                        nargs=1,
+                        default='::1')
     a = parser.parse_args()
     b = True
     if a.gw[0] == '::1':
         b = False
-    return (a.ip,int(a.port)),b,(a.gw[0],int(a.gw[1])),int(a.gw[2])
+    return a.ip,b,a.gw
     
 def clientParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -107,33 +110,30 @@ def clientParsing():
                         help='Player ID',
                         type=int)
     parser.add_argument('-s', 
-                        metavar=('ip','port'),
-                        help='Server IP(v6) and port',
+                        metavar=('ip'),
+                        help='Server IP(v6)',
                         type=str,
-                        nargs=2,
-                        default=['::1','5555'])
+                        nargs=1,
+                        default='2001:0::10')
     parser.add_argument('-c',
                         metavar=('ip','port'),
                         help='Client IP(v6) and port',
                         type=str,
-                        nargs=2,
-                        default=['::1','5556'])
+                        nargs=1,
+                        default='2001:0::10')
     parser.add_argument('-a',
                         help='Auto client',
                         action='store_true')
     parser.add_argument('-m',
-                        metavar=('ip','neighbour_port','server_port'),
-                        help='Node IP(v6) and ports',
-                        type=str,
-                        nargs=3,
-                        default=['::1','5555','6666'])
+                        help='Auto client',
+                        action='store_true')
     a = parser.parse_args()
     
     mob = True
     if a.m[0] == '::1':
         mob = False
 
-    return a.id,(a.s[0],int(a.s[1])),(a.c[0],int(a.c[1])),a.a,mob,(a.m[0],int(a.m[1])),int(a.m[2])
+    return a.id,(a.s,gamePort),(a.c,gamePort),a.a,a.m
     
 def serverParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
