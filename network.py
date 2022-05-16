@@ -300,11 +300,11 @@ class NetworkServer():
             
     #Server loop, listens and parses new messages on a port shared by all clients, and populates the data structures
     def run(self):
+
+        print("Server started!\nWaiting for messages...\n")
         outT = threading.Thread(target=self.outThread)
         outT.daemon = True
         outT.start()
-
-        print("Server started!\nWaiting for messages...\n")
         while True:
             try:
                 data,addr = self.inSocket.recvfrom(1024)
@@ -381,9 +381,16 @@ class NetworkServer():
     def outThread(self):
         print("Packet out thread started")
 
-        outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+
+        outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        outSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        outSocket.bind(('', dtn.game_mcast[1]))
         outSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_MULTICAST_LOOP, False)
+        mreq = struct.pack("16s15s".encode('utf-8'), socket.inet_pton(socket.AF_INET6, dtn.game_mcast[0]), (chr(0) * 16).encode('utf-8'))
+        outSocket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_JOIN_GROUP, mreq)
         
+
+
         packetID = 0
         clock = pg.time.Clock()
         while True:
@@ -391,4 +398,5 @@ class NetworkServer():
 
             message = self.generateMessage(packetID)
             outSocket.sendto(message,dtn.game_mcast)
+            print("sent to mcast")
             packetID += 1
