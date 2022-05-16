@@ -99,10 +99,11 @@ def dtnParsing():
                         nargs=1,
                         default=['::1'])
     a = parser.parse_args()
-    b = True
+    gw = True
     if a.gw[0] == '::1':
-        b = False
-    return a.ip,b,a.gw[0]
+        gw = False
+    print(gw)
+    return a.ip,gw,a.gw[0]
     
 def clientParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
