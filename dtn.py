@@ -97,7 +97,7 @@ class Neighbours():
         return best_addr
                     
 class Forwarder():
-    def __init__(self, dtn_pair, server_listen_port, gw = False, server_pair = None):
+    def __init__(self, dtn_pair, gw = False, server_pair = None, server_listen_port = 0):
         self.dtn_port = dtn_pair[1]
         self.server_pair = server_pair
         self.server_listen_port = server_listen_port
@@ -170,4 +170,8 @@ class Forwarder():
 
 
 if __name__ == "__main__":
-    f = Forwarder(util.dtnParsing())
+    dtn_pair,gw,server_pair,server_listen_port = util.dtnParsing()
+    if gw:
+        f = Forwarder(dtn_pair,gw,server_pair,server_listen_port)
+    else:
+        f = Forwarder(dtn_pair)
