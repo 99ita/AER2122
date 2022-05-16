@@ -97,12 +97,12 @@ def dtnParsing():
                         help='Server IP(v6), port and server listening port',
                         type=str,
                         nargs=1,
-                        default='2001:0::10')
+                        default=['::1'])
     a = parser.parse_args()
     b = True
     if a.gw[0] == '::1':
         b = False
-    return a.ip,b,a.gw
+    return a.ip,b,a.gw[0]
     
 def clientParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -114,32 +114,31 @@ def clientParsing():
                         help='Server IP(v6)',
                         type=str,
                         nargs=1,
-                        default='2001:0::10')
+                        default=['2001:0::10'])
     parser.add_argument('-c',
                         metavar=('ip'),
                         help='Client IP(v6)',
                         type=str,
                         nargs=1,
-                        default='2001:0::10')
+                        default=['2001:0::10'])
     parser.add_argument('-a',
                         help='Auto client',
                         action='store_true')
     parser.add_argument('-m',
-                        help='Auto client',
+                        help='Mobile client',
                         action='store_true')
     a = parser.parse_args()
     
-
-    return a.id,(a.s,gamePort),(a.c,gamePort),a.a,a.m
+    return a.id,(a.s[0],gamePort),(a.c[0],gamePort),a.a,a.m
     
 def serverParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-s', 
-                        metavar=('ip','port'),
-                        help='Server IP(v6) and port',
+                        metavar=('ip'),
+                        help='Server IP(v6)',
                         type=str,
-                        nargs=2,
-                        default=['::1','5555'])
+                        nargs=1,
+                        default=['::1'])
     parser.add_argument('-t',
                         metavar='seconds',
                         help='Timeout',
@@ -149,7 +148,7 @@ def serverParsing():
 
     a = parser.parse_args()
     
-    return (a.s[0],int(a.s[1])),int(a.t)
+    return (a.s[0],gamePort),int(a.t)
 
 #---------------------------------------------------------------
 

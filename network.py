@@ -35,6 +35,7 @@ class NetworkClient():
             fwd.start()
         else:   
             self.inSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+            print(self.clientPair)
             self.inSocket.bind(self.clientPair)
             self.dtn = None
 
