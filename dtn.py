@@ -40,7 +40,6 @@ class Neighbours():
         while True:
             data = struct.pack("i",self.gateway_count)
             self.sock.sendto(data, neighbour_mcast)
-            print("sent Packet")
             self.check_neighbour_timeout()
             time.sleep(self.beacon_period)
 
@@ -48,8 +47,7 @@ class Neighbours():
         print("Beacon receiver thread started!")
         while True:
             data, addr = self.sock.recvfrom(1024)
-            print("recv Packet")
-
+            print(addr)
             if not addr[0] in self.neighbours:
                 self.neighbours[addr[0]] = {}
                 print(f"Neighbour at {addr[0]} connected!")
