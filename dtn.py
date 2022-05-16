@@ -45,7 +45,7 @@ class Neighbours():
             time.sleep(self.beacon_period)
 
     def beacon_receiver(self):
-        print("Beacon sender thread started!")
+        print("Beacon receiver thread started!")
         while True:
             data, addr = self.sock.recvfrom(1024)
 
@@ -116,9 +116,8 @@ class Forwarder():
             server_listen_thread.daemon = True
             server_listen_thread.start()
         
-        neighbour_listen_thread = threading.Thread(target = self.wait_message)
-        neighbour_listen_thread.daemon = True
-        neighbour_listen_thread.start()
+        self.wait_message()
+
 
 
     def wait_message(self):
@@ -172,6 +171,7 @@ class Forwarder():
 if __name__ == "__main__":
     dtn_pair,gw,server_pair,server_listen_port = util.dtnParsing()
     if gw:
+
         f = Forwarder(dtn_pair,gw,server_pair,server_listen_port)
     else:
         f = Forwarder(dtn_pair)
