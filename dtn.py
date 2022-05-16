@@ -114,7 +114,7 @@ class Neighbours():
         return best_addr
                     
 class Forwarder():
-    def __init__(self, nodeIP, gw = False, server_pair = None):
+    def __init__(self, nodeIP, gw = False, server_pair = None, main = False):
         self.server_pair = server_pair
         self.server_listen_port = util.gwServerPort
         
@@ -133,7 +133,13 @@ class Forwarder():
             server_listener_thread.daemon = True
             server_listener_thread.start()
         
-        self.wait_message()
+        if main:
+            self.wait_message()
+        else:
+            neighbour_listener_thread = threading.Thread(target=self.wait_message)
+            neighbour_listener_thread.daemon = True
+            neighbour_listener_thread.start()
+        
 
 
     def wait_message(self):
@@ -187,6 +193,6 @@ class Forwarder():
 if __name__ == "__main__":
     nodeIP,gw,serverIP = util.dtnParsing()
     if gw:
-        f = Forwarder(nodeIP,gw,(serverIP,util.gamePort))
+        f = Forwarder(nodeIP,gw,(serverIP,util.gamePort),main = True)
     else:
-        f = Forwarder(nodeIP)
+        f = Forwarder(nodeIP,main = True)
