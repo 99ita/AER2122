@@ -125,12 +125,12 @@ class Forwarder():
         self.neighbours = Neighbours(gw,nodeIP)
 
         self.gw = gw
-        if gw:
+        '''if gw:
             self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             self.server_in_socket.bind((nodeIP,util.gwServerPort))
             server_listener_thread = threading.Thread(target=self.server_listener)
             server_listener_thread.daemon = True
-            server_listener_thread.start()
+            server_listener_thread.start()'''
         
         if main:
             self.wait_message()
@@ -155,7 +155,7 @@ class Forwarder():
 
 
 
-    def server_listener(self):
+    '''def server_listener(self):
         print("Server listener thread started!")
         mcast_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         mcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -174,7 +174,7 @@ class Forwarder():
             mcast_socket.sendto(data,game_mcast)
 
             print(f"Packet received from server and forwarded to multicast group!")
-
+    '''
     
     def send_packet(self, data):
         if self.gw:

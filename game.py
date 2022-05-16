@@ -335,8 +335,7 @@ class Game():
                     fill = 2
                 else:
                     fill = 0
-                #print("Draw player", k)
-                print(self.sPlayers[k].color)
+                    
                 pg.draw.polygon(win, util.decode_color(self.sPlayers[k].color), self.sPlayers[k].triangle, fill)
                 a,b,_ = self.sPlayers[k].triangle
                 health_bar(self.sPlayers[k],win,a,b)
@@ -344,7 +343,6 @@ class Game():
         for s in self.sShots:
             if hasattr(s,'color'):
                 if s.color != self.id:
-                    #print("Draw shot",s.color)
                     pg.draw.line(win, util.decode_color(s.color), (s.x1,s.y1), (s.x2,s.y2), 2)
                 else:
                     if s.kill == True:
