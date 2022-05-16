@@ -309,12 +309,10 @@ class NetworkServer():
             try:
                 data,addr = self.inSocket.recvfrom(1024)
             except:
-                for k in self.killSessions.keys():
-                    self.killSessions[k] = True
-                
                 self.inSocket.close()
                 print("Server timed out!")
                 exit()
+                
             clientPort,packetID = struct.unpack('!Hi',data[:6])
             playerArr = data[6:23]
             p = util.sPlayer(playerArr,addr,clientPort)
@@ -346,7 +344,6 @@ class NetworkServer():
     #Controls each client's session metrics
     def sessionControl(self, color, packetID, time, addr, clientPort):
         if not color in self.metrics:
-            self.killSessions[color] = False
             self.metrics[color] = {}
             self.metrics[color]['lastPrinted'] = -10000
             self.metrics[color]['first'] = int(packetID)
@@ -362,7 +359,7 @@ class NetworkServer():
 
         if self.metrics[color]['curr'] - self.metrics[color]['lastPrinted'] >= printInterval:
             self.metrics[color]['lastPrinted'] = self.metrics[color]['curr']
-            lossPerc = 0#self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
+            lossPerc = self.metrics['lost']/(self.metrics['curr'] - self.metrics['first'] + 1)
             print("Player", color, "current packetID: ", packetID)
             print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , lossPerc , "%)\n") 
     

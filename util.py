@@ -138,7 +138,7 @@ def serverParsing():
                         help='Server IP(v6)',
                         type=str,
                         nargs=1,
-                        default=['::1'])
+                        default=['2001:0::10'])
     parser.add_argument('-t',
                         metavar='seconds',
                         help='Timeout',
