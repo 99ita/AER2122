@@ -161,8 +161,7 @@ class NetworkServer():
                 self.inSocket.close()
                 print("Server timed out!")
                 exit()
-            packetID = struct.unpack('!i',data[:4])
-            
+            packetID, = struct.unpack('!i',data[:4])
 
             playerArr = data[4:21]
             p = util.sPlayer(playerArr,addr)
