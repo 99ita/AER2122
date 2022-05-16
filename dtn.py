@@ -51,11 +51,10 @@ class Neighbours():
         while True:
             data, addr = self.sock.recvfrom(1024)
 
-            c = struct.unpack("i",data[:4])
+            c, = struct.unpack("i",data[:4])
             data = data[4:]
             (i,), data = struct.unpack("I", data[:4]), data[4:]
             neighbour_ip = data[:i].decode('utf-8')
-            print(c)
             if not neighbour_ip in self.neighbours:
                 self.neighbours[neighbour_ip] = {}
                 if c != -1:

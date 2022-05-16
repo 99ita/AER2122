@@ -102,7 +102,6 @@ def dtnParsing():
     gw = True
     if a.gw[0] == '::1':
         gw = False
-    print(gw)
     return a.ip,gw,a.gw[0]
     
 def clientParsing():
