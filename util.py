@@ -116,8 +116,8 @@ def clientParsing():
                         nargs=1,
                         default='2001:0::10')
     parser.add_argument('-c',
-                        metavar=('ip','port'),
-                        help='Client IP(v6) and port',
+                        metavar=('ip'),
+                        help='Client IP(v6)',
                         type=str,
                         nargs=1,
                         default='2001:0::10')
@@ -129,9 +129,6 @@ def clientParsing():
                         action='store_true')
     a = parser.parse_args()
     
-    mob = True
-    if a.m[0] == '::1':
-        mob = False
 
     return a.id,(a.s,gamePort),(a.c,gamePort),a.a,a.m
     
