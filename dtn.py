@@ -104,15 +104,15 @@ class Forwarder():
         
         self.neighbours = Neighbours(gw)
 
-        neighbour_listen_thread = threading.Thread(target = self.wait_message)
-        neighbour_listen_thread.daemon = True
-        neighbour_listen_thread.start()
-        
         self.gw = gw
         if gw:
             self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
             self.server_in_socket.bind((nodeIP,self.server_listen_port))
-            self.server_listener()       
+            server_listener_thread = threading.Thread(target=self.server_listener)
+            server_listener_thread.daemon = True
+            server_listener_thread.start()
+        
+        self.wait_message()
 
 
 
@@ -168,7 +168,6 @@ class Forwarder():
 if __name__ == "__main__":
     nodeIP,gw,serverIP = util.dtnParsing()
     if gw:
-
         f = Forwarder(nodeIP,gw,(serverIP,util.gamePort))
     else:
         f = Forwarder(nodeIP)
