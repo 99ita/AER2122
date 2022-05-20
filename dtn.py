@@ -130,9 +130,6 @@ class Forwarder():
 
         if gw:
             self.wireless_clients = []
-            self.server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-            print(f"insocket: {(listeningIP,util.gamePort)}")
-            self.server_in_socket.bind((listeningIP,util.gamePort))
             server_listener_thread = threading.Thread(target=self.server_listener)
             server_listener_thread.daemon = True
             server_listener_thread.start()
@@ -169,16 +166,19 @@ class Forwarder():
 
     def server_listener(self):
         print("Server listener thread started!")
+
+        server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        server_in_socket.bind((listeningIP,util.gamePort))
         socketToWan = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         
         
         while True:
             print(f"\nWClients {self.wireless_clients}\n")
             try:
-                data, = self.server_in_socket.recvfrom(1024)
+                data, = server_in_socket.recvfrom(1024)
             except:
                 print("Server listener died!")
-                self.server_in_socket.close()
+                server_in_socket.close()
                 exit()
 
             for addr in self.wireless_clients:
