@@ -44,6 +44,7 @@ class NetworkClient():
             s1 = self.clientPair[0].encode('utf-8')
             s2 = self.serverPair[0].encode('utf-8')
             header = struct.pack("I%dsI%dsI" % (len(s1),len(s2),), len(s1), s1, len(s2), s2, util.gamePort)
+            print(header)
             message = header + message
             self.dtn.send_packet(message)
         else:
