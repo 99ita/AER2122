@@ -83,6 +83,22 @@ def decode_color(color):
     if color == 9:
         return magenta
 
+def resolve_ipv6(ip):
+    spl = ip.split(':')
+
+    spl = list(filter(lambda val: val != '0', spl)) 
+
+    ret = spl[0]
+    for s in spl[1:]:
+        ret += ':'
+        ret += s
+
+    return ret
+
+print(resolve_ipv6('2001:1:1:10'))
+print(resolve_ipv6('2001:1::10'))
+
+
 ########################################################################################################
 
 #Arguments parsers
@@ -101,7 +117,7 @@ def dtnParsing():
     gw = True
     if a.gw[0] == '::1':
         gw = False
-    return a.ip,gw,a.gw[0]
+    return resolve_ipv6(a.ip),gw,resolve_ipv6(a.gw[0])
     
 def clientParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -128,7 +144,7 @@ def clientParsing():
                         action='store_true')
     a = parser.parse_args()
     
-    return a.id,(a.s[0],gamePort),(a.c[0],gamePort),a.a,a.m
+    return a.id,(resolve_ipv6(a.s[0]),gamePort),(resolve_ipv6(a.c[0]),gamePort),a.a,a.m
     
 def serverParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -147,7 +163,7 @@ def serverParsing():
 
     a = parser.parse_args()
     
-    return (a.s[0],gamePort),int(a.t)
+    return (resolve_ipv6(a.s[0]),gamePort),int(a.t)
 
 #---------------------------------------------------------------
 
@@ -220,8 +236,7 @@ class sShot():
 
     def toBytes(self):
         return bytearray(struct.pack('!fffhh?',self.x1,self.y1,self.ang,self.color,self.id,self.kill))   
-        return str(self.x1) + ',' + str(self.y1) + ',' + str(self.ang) + ',' + str(self.color) + ',' + str(self.id) + ',' + str(self.kill) + ':'
-
+        
 class sPlayer():
     def __init__(self,data,addr):
         try:
