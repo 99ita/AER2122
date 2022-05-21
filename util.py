@@ -93,15 +93,15 @@ def dtnParsing():
                         type=str)    
     parser.add_argument('-gw',
                         metavar=('ip'),
-                        help='Server IP(v6), and gateway router listening IP(v6)',
+                        help='Gateway router listening IP(v6)',
                         type=str,
-                        nargs=2,
-                        default=['::1','2001:10::2'])
+                        nargs=1,
+                        default=['::1'])
     a = parser.parse_args()
     gw = True
     if a.gw[0] == '::1':
         gw = False
-    return a.ip,gw,a.gw[0],a.gw[1]
+    return a.ip,gw,a.gw[0]
     
 def clientParsing():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)

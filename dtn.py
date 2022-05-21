@@ -143,6 +143,7 @@ class Forwarder():
 
 
     def wait_message(self):
+        serverPair = None
         while True:
             try:
                 data,addr = self.neighbour_in_socket.recvfrom(1024)
@@ -160,10 +161,10 @@ class Forwarder():
 
                 serverPair = (serverIP,serverPort)
 
-                self.wireless_clients.setdefault(serverPair,[])
+                self.wireless_clients.setdefault(serverPair[0],[])
                     
-                if clientIp not in self.wireless_clients[serverPair]:
-                    self.wireless_clients[serverPair].append(clientIp)
+                if clientIp not in self.wireless_clients[serverPair[0]]:
+                    self.wireless_clients[serverPair[0]].append(clientIp)
 
             print(f"Packet received from {addr[0]}")
             self.send_packet(data, server_pair=serverPair)
@@ -209,8 +210,8 @@ class Forwarder():
 
 
 if __name__ == "__main__":
-    nodeIP,gw,serverIP,listeningIP = util.dtnParsing()
+    nodeIP,gw,listeningIP = util.dtnParsing()
     if gw:
-        f = Forwarder(nodeIP,True,(serverIP,util.gamePort),listeningIP,main = True)
+        f = Forwarder(nodeIP,True,listeningIP,main = True)
     else:
         f = Forwarder(nodeIP,main = True)
