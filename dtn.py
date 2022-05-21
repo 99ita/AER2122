@@ -99,16 +99,23 @@ class Neighbours():
         if len(self.neighbours.keys()) < 1:
             return None
         for addr in self.neighbours.keys():
-            if self.neighbours[addr]["gw_count"] == -1 or self.neighbours[addr]["gw_on"] > 0:
+            if self.neighbours[addr]["gw_count"] == -1:
                 return addr
             if fst:
                 best = self.neighbours[addr]["gw_count"]
+                bestOn = self.neighbours[addr]["gw_count"]
                 best_addr = addr
                 fst = False
             else:   
-                if self.neighbours[addr]["gw_count"] > best:
+                if self.neighbours[addr]["gw_on"] > bestOn:
                     best = self.neighbours[addr]["gw_count"]
                     best_addr = addr
+                    bestOn = self.neighbours[addr]["gw_on"]
+                elif self.neighbours[addr]["gw_on"] == bestOn:
+                    if self.neighbours[addr]["gw_count"] > best:
+                        best = self.neighbours[addr]["gw_count"]
+                        best_addr = addr
+                        
         if self.gateway_count >= best:
             return None
         
