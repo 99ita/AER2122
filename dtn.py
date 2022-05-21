@@ -171,7 +171,7 @@ class Forwarder():
                     self.wireless_clients[serverPair[0]].append(clientIp)
 
             print(f"Packet received from {addr[0]}")
-            self.send_packet(data, server_pair=serverPair)
+            self.send_packet(data[sizeC+sizeS+12:], server_pair=serverPair)
 
 
 
@@ -186,7 +186,6 @@ class Forwarder():
         while True:
             try:
                 data,adr = server_in_socket.recvfrom(1024)
-                print(adr)
             except:
                 print("Server listener died!")
                 server_in_socket.close()
