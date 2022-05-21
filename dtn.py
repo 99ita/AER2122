@@ -175,7 +175,7 @@ class Forwarder():
         while True:
             print(f"\nWClients {self.wireless_clients}\n")
             try:
-                data, = server_in_socket.recvfrom(1024)
+                data,adr = server_in_socket.recvfrom(1024)
             except:
                 print("Server listener died!")
                 server_in_socket.close()
