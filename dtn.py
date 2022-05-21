@@ -153,16 +153,16 @@ class Forwarder():
                 exit()
 
             if self.gw:
-                (i,), data = struct.unpack("I", data[:4]), data[4:]
-                print(data)
-                clientIp, data = data[:i].decode('utf-8'), data[i:]
-                print(data)
-                (i,), data = struct.unpack("I", data[:4]), data[4:]
-                print(data)
-                serverIP, data = data[:i].decode('utf-8'), data[i:]
-                print(data)
-                serverPort, data = struct.unpack("I", data[:4]), data[4:]
-                print(data)
+                (sizeC,) = struct.unpack("I", data[:4])
+
+
+                clientIp, data = data[4:sizeC+4].decode('utf-8')
+                
+                (sizeS,) = struct.unpack("I", data[sizeC+4:])
+        
+                serverIP, data = data[sizeC+4:sizeC+sizeS+8].decode('utf-8')
+                serverPort, data = struct.unpack("I", data[sizeC+sizeS+8:sizeC+sizeS+12])
+
 
                 serverPair = (serverIP,serverPort)
 
