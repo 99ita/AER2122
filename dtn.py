@@ -158,9 +158,9 @@ class Forwarder():
 
                 clientIp = data[4:sizeC+4].decode('utf-8')
                 
-                (sizeS,) = struct.unpack("I", data[sizeC+4:])
+                (sizeS,) = struct.unpack("I", data[sizeC+4:sizeC+8])
         
-                serverIP = data[sizeC+4:sizeC+sizeS+8].decode('utf-8')
+                serverIP = data[sizeC+8:sizeC+sizeS+8].decode('utf-8')
                 serverPort = struct.unpack("I", data[sizeC+sizeS+8:sizeC+sizeS+12])
 
 
