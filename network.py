@@ -43,8 +43,8 @@ class NetworkClient():
         if self.mobile: #DTN Header: I src_ip I dst_ip dst_port
             s1 = self.clientPair[0].encode('utf-8')
             s2 = self.serverPair[0].encode('utf-8')
-            header = struct.pack("I%ds",(len(s1),),len(s1),s1)
-            header += struct.pack("I%ds",(len(s2),),len(s2),s2)
+            header = struct.pack(f"I{len(s1)}s",len(s1),s1)
+            header += struct.pack(f"I{len(s2)}s",len(s2),s2)
             header += struct.pack("I",util.gamePort)
             print(header)
             message = header + message
