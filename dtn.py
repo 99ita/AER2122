@@ -161,7 +161,7 @@ class Forwarder():
         
                 serverIP = data[sizeC+8:sizeC+sizeS+8].decode('utf-8')
                 serverPort, = struct.unpack("I", data[sizeC+sizeS+8:sizeC+sizeS+12])
-
+                data = data[sizeC+sizeS+12:]
 
                 serverPair = (serverIP,serverPort)
 
@@ -171,7 +171,7 @@ class Forwarder():
                     self.wireless_clients[serverPair[0]].append(clientIp)
 
             print(f"Packet received from {addr[0]}")
-            self.send_packet(data[sizeC+sizeS+12:], server_pair=serverPair)
+            self.send_packet(data, server_pair=serverPair)
 
 
 
