@@ -115,8 +115,7 @@ class Neighbours():
         return best_addr
                     
 class Forwarder():
-    def __init__(self, nodeIP, gw = False, server_pair = None, listeningIP = None, main = False):
-        self.server_pair = server_pair
+    def __init__(self, nodeIP, gw = False, listeningIP = None, main = False):
         self.nodeIP = nodeIP
         
         self.neighbour_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
@@ -129,7 +128,7 @@ class Forwarder():
         self.gw = gw
 
         if gw:
-            self.wireless_clients = []
+            self.wireless_clients = {}
             server_listener_thread = threading.Thread(target=self.server_listener)
             server_listener_thread.daemon = True
             server_listener_thread.start()
@@ -154,13 +153,20 @@ class Forwarder():
 
             if self.gw:
                 (i,), data = struct.unpack("I", data[:4]), data[4:]
-                clientIp, data = data[:i], data[i:]
-            
-                if clientIp not in self.wireless_clients:
-                    self.wireless_clients.append(clientIp.decode('utf-8'))
+                clientIp, data = data[:i].decode('utf-8'), data[i:]
+                (i,), data = struct.unpack("I", data[:4]), data[4:]
+                serverIP, data = data[:i].decode('utf-8'), data[i:]
+                serverPort, data = struct.unpack("I", data[:4]), data[4:]
+
+                serverPair = (serverIP,serverPort)
+
+                self.wireless_clients.setdefault(serverPair,[])
+                    
+                if clientIp not in self.wireless_clients[serverPair]:
+                    self.wireless_clients[serverPair].append(clientIp)
 
             print(f"Packet received from {addr[0]}")
-            self.send_packet(data)
+            self.send_packet(data, server_pair=serverPair)
 
 
 
@@ -173,25 +179,25 @@ class Forwarder():
         
         
         while True:
-            print(f"\nWClients {self.wireless_clients}\n")
             try:
                 data,adr = server_in_socket.recvfrom(1024)
+                print(adr)
             except:
                 print("Server listener died!")
                 server_in_socket.close()
                 exit()
 
-            for addr in self.wireless_clients:
+            for addr in self.wireless_clients[adr[0]]:
                 print(f"Sending packet to {addr}!")
                 socketToWan.sendto(data,(addr,util.gamePort))
 
             print(f"Packet received from server and forwarded to all wireless clients!")
     
     
-    def send_packet(self, data):
+    def send_packet(self, data, server_pair = None):
         if self.gw:
-            print(f"Sending packet to server at {self.server_pair}")
-            self.outSocket.sendto(data,self.server_pair)
+            print(f"Sending packet to server at {server_pair}")
+            self.outSocket.sendto(data,server_pair)
         else:
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop:
