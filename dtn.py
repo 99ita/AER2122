@@ -73,10 +73,10 @@ class Neighbours():
                         gateway = 'gateway'
                     else:
                         gateway = 'gateways'
-                    print(f"[Neighbours] Neighbour at {neighbour_ip} connected with a score of {c} and connected to {gwon} {gateway}!")
+                    print(f"[Neighbours] Neighbour at {neighbour_ip} connected with a score of {c} and connected to {gwon} {gateway}!\n")
                 else:
                     self.gwOn += 1
-                    print(f"[Neighbours] Gateway router at {neighbour_ip} connected!")
+                    print(f"[Neighbours] Gateway router at {neighbour_ip} connected!\n")
 
             if c == -1 and not self.gw:
                 self.gateway_count += 1
@@ -92,9 +92,9 @@ class Neighbours():
         for addr in self.neighbours.keys():
             if time.time() - self.neighbours[addr]["time"] >= 2*self.beacon_period:
                 if self.neighbours[addr]["score"] != -1:
-                    print(f"[Neighbours] Neighbour at {addr} timed out!")
+                    print(f"[Neighbours] Neighbour at {addr} timed out!\n")
                 else:
-                    print(f"[Neighbours] Gateway router at {addr} timed out!")
+                    print(f"[Neighbours] Gateway router at {addr} timed out!\n")
                     self.gwOn -= 1
 
                 to.append(addr)
@@ -123,6 +123,7 @@ class Neighbours():
                         best_addr = addr
             elif self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"]:
                 best_addr = addr
+        return best_addr
 
 
 class Forwarder():
@@ -217,10 +218,10 @@ class Forwarder():
         else:
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop == pktFrom:
-                print("[Node {self.nodeIP}] Best neighbour is the one who sent the packet!")
-                nextHop == None
+                print(f"[Node {self.nodeIP}] Best neighbour is the one who sent the packet!")
+                nextHop = None
             elif nextHop == pktOrigin:
-                print("[Node {self.nodeIP}] Best neighbour is the one who created the packet!")
+                print(f"[Node {self.nodeIP}] Best neighbour is the one who created the packet!")
                 nextHop = None
             if nextHop:
                 if fst: #DTN Header: I src_ip I dst_ip dst_port
@@ -232,12 +233,12 @@ class Forwarder():
                     data = header + data
                 try:
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
-                    print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})")
+                    print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})\n")
                 except:
-                    print(f"[Node {self.nodeIP}] Packet dropped!")
+                    print(f"[Node {self.nodeIP}] Packet dropped!\n")
 
             else:
-                print(f"[Node {self.nodeIP}] Packet dropped!")
+                print(f"[Node {self.nodeIP}] Packet dropped!\n")
 
 
 
