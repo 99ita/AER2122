@@ -236,8 +236,12 @@ class Forwarder():
                     header += struct.pack(f"I{len(s2)}s",len(s2),s2)
                     header += struct.pack("I",server_pair[1])
                     data = header + data
-                self.outSocket.sendto(data,(nextHop,util.mobilePort))
-                print(f"Sending packet to best neighbour ({nextHop})")
+                try:
+                    self.outSocket.sendto(data,(nextHop,util.mobilePort))
+                    print(f"Sending packet to best neighbour ({nextHop})")
+                except:
+                    print("Packet dropped")
+
             else:
                 print("Packet dropped")
 
