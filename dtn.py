@@ -102,6 +102,10 @@ class Neighbours():
             return None
 
         for addr in self.neighbours.keys():
+            if fst:
+                best_addr = addr
+                fst = False
+                pass
             if self.neighbours[addr]["gw_count"] == -1:
                 return addr
             elif self.neighbours[addr]["gw_on"] > 0:
