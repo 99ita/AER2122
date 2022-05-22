@@ -212,7 +212,7 @@ class Forwarder():
             print(f"Packet received from server and forwarded to all wireless clients!")
     
     
-    def send_packet(self, data, fst = False, client_ip = None, server_pair = None):
+    def send_packet(self, data, fst = False, server_pair = None):
         if self.gw:
             print(f"Sending packet to server at {server_pair}")
             self.outSocket.sendto(data,server_pair)
@@ -220,7 +220,7 @@ class Forwarder():
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop:
                 if fst: #DTN Header: I src_ip I dst_ip dst_port
-                    s1 = client_ip.encode('utf-8')
+                    s1 = self.nodeIP.encode('utf-8')
                     s2 = server_pair[0].encode('utf-8')
                     header = struct.pack(f"I{len(s1)}s",len(s1),s1)
                     header += struct.pack(f"I{len(s2)}s",len(s2),s2)

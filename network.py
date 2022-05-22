@@ -41,7 +41,7 @@ class NetworkClient():
             message += s.toBytes()
         
         if self.mobile: 
-            self.dtn.send_packet(message,fst=True,client_ip=self.clientPair[0],server_pair=self.serverPair)
+            self.dtn.send_packet(message,fst=True,server_pair=self.serverPair)
         else:
             self.outSocket.sendto(message, self.serverPair)
     

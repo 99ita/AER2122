@@ -12,6 +12,6 @@ while True:
     message = "message"
     message += f'{i}'
     print(f"sending: '{message}'")
-    fwd.send_packet(bytes(message,'utf-8'))
+    fwd.send_packet(bytes(message,'utf-8'),fst = True, client_ip = sys.argv[1], server_pair = (sys.argv[2],sys.argv[3]))
     time.sleep(1)
     i+=1
