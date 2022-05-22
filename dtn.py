@@ -43,7 +43,7 @@ class Neighbours():
 
         
     def beacon_sender(self):
-        print("Beacon sender thread started!")
+        print("[Neighbours] Beacon sender thread started!")
         s = bytes(self.ip, 'utf-8')
         while True:
             if not self.gw:
@@ -56,7 +56,7 @@ class Neighbours():
             time.sleep(self.beacon_period)
 
     def beacon_receiver(self):
-        print("Beacon receiver thread started!")
+        print("[Neighbours] Beacon receiver thread started!")
         while True:
             data, addr = self.sock.recvfrom(1024)
 
@@ -73,10 +73,10 @@ class Neighbours():
                         gateway = 'gateway'
                     else:
                         gateway = 'gateways'
-                    print(f"Neighbour at {neighbour_ip} connected with a score of {c} and connected to {gwon} {gateway}!")
+                    print(f"[Neighbours] Neighbour at {neighbour_ip} connected with a score of {c} and connected to {gwon} {gateway}!")
                 else:
                     self.gwOn += 1
-                    print(f"Gateway router at {neighbour_ip} connected!")
+                    print(f"[Neighbours] Gateway router at {neighbour_ip} connected!")
 
             if c == -1 and not self.gw:
                 self.gateway_count += 1
@@ -92,9 +92,9 @@ class Neighbours():
         for addr in self.neighbours.keys():
             if time.time() - self.neighbours[addr]["time"] >= 2*self.beacon_period:
                 if self.neighbours[addr]["score"] != -1:
-                    print(f"Neighbour at {addr} timed out!")
+                    print(f"[Neighbours] Neighbour at {addr} timed out!")
                 else:
-                    print(f"Gateway router at {addr} timed out!")
+                    print(f"[Neighbours] Gateway router at {addr} timed out!")
                     self.gwOn -= 1
 
                 to.append(addr)
@@ -123,12 +123,7 @@ class Neighbours():
                         best_addr = addr
             elif self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"]:
                 best_addr = addr
-            
-        if best_addr:
-            print(best_addr)
-        else:
-            print("None")
-        return best_addr
+
 
 class Forwarder():
     def __init__(self, nodeIP, gw = False, listeningIP = None, main = False):
@@ -188,46 +183,45 @@ class Forwarder():
                 if clientIp not in self.wireless_clients[serverPair[0]]:
                     self.wireless_clients[serverPair[0]].append(clientIp)
 
-            print(f"Packet received from {addr[0]}")
+            print(f"[Node {self.nodeIP}] Packet received from {addr[0]}")
             self.send_packet(data, pktFrom=addr[0], pktOrigin=clientIp, server_pair=serverPair)
 
 
 
     def server_listener(self):
-        print("Server listener thread started!")
+        print("[Node {self.nodeIP}] Server listener thread started!")
 
         server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         server_in_socket.bind((listeningIP,util.gamePort))
         socketToWan = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         
-        
         while True:
             try:
                 data,adr = server_in_socket.recvfrom(1024)
+                print(f"[Node {self.nodeIP}] Packet received from server!")
             except:
-                print("Server listener died!")
+                print("[Node {self.nodeIP}] Server listener died!")
                 server_in_socket.close()
                 exit()
 
             for addr in self.wireless_clients[adr[0]]:
-                print(f"Sending packet to {addr}!")
+                print(f"[Node {self.nodeIP}] Sending packet to {addr}!")
                 socketToWan.sendto(data,(addr,util.gamePort))
 
-            print(f"Packet received from server and forwarded to all wireless clients!")
     
     
     def send_packet(self, data, pktFrom = '', pktOrigin = '', fst = False, server_pair = None):
         if self.gw:
-            print(f"Sending packet to server at {server_pair}")
+            print(f"[Node {self.nodeIP}] Sending packet to server at {server_pair}")
             self.outSocket.sendto(data,server_pair)
         else:
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop == pktFrom:
-                print("Best neighbour is the one who sent the packet!")
+                print("[Node {self.nodeIP}] Best neighbour is the one who sent the packet!")
                 nextHop == None
-            if nextHop == pktOrigin:
+            elif nextHop == pktOrigin:
+                print("[Node {self.nodeIP}] Best neighbour is the one who created the packet!")
                 nextHop = None
-                print("Best neighbour is the one who created the packet!")
             if nextHop:
                 if fst: #DTN Header: I src_ip I dst_ip dst_port
                     s1 = self.nodeIP.encode('utf-8')
@@ -238,12 +232,12 @@ class Forwarder():
                     data = header + data
                 try:
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
-                    print(f"Sending packet to best neighbour ({nextHop})")
+                    print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})")
                 except:
-                    print("Packet dropped")
+                    print(f"[Node {self.nodeIP}] Packet dropped!")
 
             else:
-                print("Packet dropped")
+                print(f"[Node {self.nodeIP}] Packet dropped!")
 
 
 
