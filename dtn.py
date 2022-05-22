@@ -123,17 +123,7 @@ class Neighbours():
                         best_addr = addr
             elif self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"]:
                 best_addr = addr
-        
-        if best_addr != None:
-            if self.gwOn > 0 and self.neighbours[best_addr]["gw_on"] < 1:
-                return None
-            if self.neighbours[best_addr]["gw_on"] > 0 and self.gwOn > 0:
-                if self.gateway_count >= self.neighbours[best_addr]["score"]:
-                    return None
-            if self.neighbours[best_addr]["gw_on"] == 0 and self.gwOn == 0:
-                if self.gateway_count >= self.neighbours[best_addr]["score"]:
-                    return None
-            
+                    
         return best_addr
 
 class Forwarder():
@@ -176,11 +166,11 @@ class Forwarder():
                 self.outSocket.close()
                 exit()
 
-            if self.gw:
-                sizeC, = struct.unpack("I", data[:4])
 
-                clientIp = data[4:sizeC+4].decode('utf-8')
+            sizeC, = struct.unpack("I", data[:4])
+            clientIp = data[4:sizeC+4].decode('utf-8')
                 
+            if self.gw:
                 sizeS, = struct.unpack("I", data[sizeC+4:sizeC+8])
         
                 serverIp = data[sizeC+8:sizeC+sizeS+8].decode('utf-8')
@@ -195,7 +185,7 @@ class Forwarder():
                     self.wireless_clients[serverPair[0]].append(clientIp)
 
             print(f"Packet received from {addr[0]}")
-            self.send_packet(data, server_pair=serverPair)
+            self.send_packet(data, pktFrom=addr[0], pktOrigin=clientIp, server_pair=serverPair)
 
 
 
@@ -222,12 +212,18 @@ class Forwarder():
             print(f"Packet received from server and forwarded to all wireless clients!")
     
     
-    def send_packet(self, data, fst = False, server_pair = None):
+    def send_packet(self, data, pktFrom = '', pktOrigin = '', fst = False, server_pair = None):
         if self.gw:
             print(f"Sending packet to server at {server_pair}")
             self.outSocket.sendto(data,server_pair)
         else:
             nextHop = self.neighbours.best_neighbour_addr()
+            if nextHop == pktFrom:
+                print("Best neighbour is the one who sent the packet!")
+                nextHop == None
+            if nextHop == pktOrigin:
+                nextHop = None
+                print("Best neighbour is the one who created the packet!")
             if nextHop:
                 if fst: #DTN Header: I src_ip I dst_ip dst_port
                     s1 = self.nodeIP.encode('utf-8')
