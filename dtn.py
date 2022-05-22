@@ -6,10 +6,11 @@ import util
 
 neighbour_mcast = ("ff02::abcd:1",8080)
 game_mcast = ("ff02::dcba:1",8182)
+beacon_period = 0.5
 
 
 class Neighbours():
-    def __init__(self,gw,ip,beacon_period = 1):
+    def __init__(self,gw,ip,beacon_period = beacon_period):
         self.gw = gw
         self.ip = ip
         self.beacon_period = beacon_period
@@ -82,7 +83,7 @@ class Neighbours():
     def check_neighbour_timeout(self):
         to = []
         for addr in self.neighbours.keys():
-            if time.time() - self.neighbours[addr]["time"] > self.beacon_period:
+            if time.time() - self.neighbours[addr]["time"] >= 2*self.beacon_period:
                 if self.neighbours[addr]["gw_count"] != -1:
                     print(f"Neighbour at {addr} timed out!")
                 else:
@@ -93,34 +94,37 @@ class Neighbours():
         for addr in to:
             del self.neighbours[addr]
 
+
     def best_neighbour_addr(self):
         best_addr = None
         fst = True
         if len(self.neighbours.keys()) < 1:
             return None
+
         for addr in self.neighbours.keys():
             if self.neighbours[addr]["gw_count"] == -1:
                 return addr
-            if fst:
-                best = self.neighbours[addr]["gw_count"]
-                bestOn = self.neighbours[addr]["gw_count"]
-                best_addr = addr
-                fst = False
-            else:   
-                if self.neighbours[addr]["gw_on"] > bestOn:
-                    best = self.neighbours[addr]["gw_count"]
+            elif self.neighbours[addr]["gw_on"] > 0:
+                if self.neighbours[best_addr]["gw_on"] < 1:
                     best_addr = addr
-                    bestOn = self.neighbours[addr]["gw_on"]
-                elif self.neighbours[addr]["gw_on"] == bestOn:
-                    if self.neighbours[addr]["gw_count"] > best:
-                        best = self.neighbours[addr]["gw_count"]
+                else:
+                    if self.neighbours[addr]["gw_count"] > self.neighbours[best_addr]["gw_count"]:
                         best_addr = addr
-                        
-        if self.gateway_count >= best:
-            return None
+            elif self.neighbours[addr]["gw_count"] > self.neighbours[best_addr]["gw_count"]:
+                best_addr = addr
         
+        if best_addr != None:
+            if self.gwOn > 0 and self.neighbours[best_addr]["gw_on"] < 1:
+                return None
+            if self.neighbours[best_addr]["gw_on"] > 0 and self.gwOn > 0:
+                if self.gateway_count >= self.neighbours[best_addr]["gw_count"]:
+                    return None
+            if self.neighbours[best_addr]["gw_on"] == 0 and self.gwOn == 0:
+                if self.gateway_count >= self.neighbours[best_addr]["gw_count"]:
+                    return None
+            
         return best_addr
-                    
+
 class Forwarder():
     def __init__(self, nodeIP, gw = False, listeningIP = None, main = False):
         self.nodeIP = nodeIP
@@ -171,11 +175,6 @@ class Forwarder():
                 serverIp = data[sizeC+8:sizeC+sizeS+8].decode('utf-8')
                 serverPort, = struct.unpack("I", data[sizeC+sizeS+8:sizeC+sizeS+12])
                 data = data[sizeC+sizeS+12:]
-
-
-                print(serverIp)
-                print(serverPort)
-                print(data)
 
                 serverPair = (serverIp,serverPort)
 
