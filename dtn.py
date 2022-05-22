@@ -11,6 +11,7 @@ beacon_period = 0.5
 
 class Neighbours():
     def __init__(self,gw,ip,beacon_period = beacon_period):
+        self.fstTime = time.time()
         self.gw = gw
         self.ip = ip
         self.beacon_period = beacon_period
@@ -18,6 +19,10 @@ class Neighbours():
         self.gateway_count = 0
         if self.gw:
             self.gateway_count = -1
+        
+        self.gwon_count = 0
+
+        self.score = self.gateway_count
 
         self.neighbours = {}
         self.gwOn = 0
@@ -41,8 +46,10 @@ class Neighbours():
         print("Beacon sender thread started!")
         s = bytes(self.ip, 'utf-8')
         while True:
+            if not self.gw:
+                self.score = (self.gateway_count*10 + self.gwon_count)/(time.time()-self.fstTime)
             data = struct.pack("i",self.gwOn)
-            data += struct.pack("i",self.gateway_count)
+            data += struct.pack("i",self.score)
             data += struct.pack("I%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
             self.check_neighbour_timeout()
@@ -60,6 +67,8 @@ class Neighbours():
             if not neighbour_ip in self.neighbours:
                 self.neighbours[neighbour_ip] = {}
                 if c != -1:
+                    if gwon >= 1:
+                        self.gwon_count += 1
                     if gwon == 1:
                         gateway = 'gateway'
                     else:
@@ -69,13 +78,11 @@ class Neighbours():
                     self.gwOn += 1
                     print(f"Gateway router at {neighbour_ip} connected!")
 
-
-
             if c == -1 and not self.gw:
                 self.gateway_count += 1
 
             self.neighbours[neighbour_ip]["gw_on"] = gwon
-            self.neighbours[neighbour_ip]["gw_count"] = c
+            self.neighbours[neighbour_ip]["score"] = c
             self.neighbours[neighbour_ip]["time"] = time.time()
 
 
@@ -84,7 +91,7 @@ class Neighbours():
         to = []
         for addr in self.neighbours.keys():
             if time.time() - self.neighbours[addr]["time"] >= 2*self.beacon_period:
-                if self.neighbours[addr]["gw_count"] != -1:
+                if self.neighbours[addr]["score"] != -1:
                     print(f"Neighbour at {addr} timed out!")
                 else:
                     print(f"Gateway router at {addr} timed out!")
@@ -106,25 +113,25 @@ class Neighbours():
                 best_addr = addr
                 fst = False
                 pass
-            if self.neighbours[addr]["gw_count"] == -1:
+            if self.neighbours[addr]["score"] == -1:
                 return addr
             elif self.neighbours[addr]["gw_on"] > 0:
                 if self.neighbours[best_addr]["gw_on"] < 1:
                     best_addr = addr
                 else:
-                    if self.neighbours[addr]["gw_count"] > self.neighbours[best_addr]["gw_count"]:
+                    if self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"]:
                         best_addr = addr
-            elif self.neighbours[addr]["gw_count"] > self.neighbours[best_addr]["gw_count"]:
+            elif self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"]:
                 best_addr = addr
         
         if best_addr != None:
             if self.gwOn > 0 and self.neighbours[best_addr]["gw_on"] < 1:
                 return None
             if self.neighbours[best_addr]["gw_on"] > 0 and self.gwOn > 0:
-                if self.gateway_count >= self.neighbours[best_addr]["gw_count"]:
+                if self.gateway_count >= self.neighbours[best_addr]["score"]:
                     return None
             if self.neighbours[best_addr]["gw_on"] == 0 and self.gwOn == 0:
-                if self.gateway_count >= self.neighbours[best_addr]["gw_count"]:
+                if self.gateway_count >= self.neighbours[best_addr]["score"]:
                     return None
             
         return best_addr
