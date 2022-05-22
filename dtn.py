@@ -123,7 +123,11 @@ class Neighbours():
                         best_addr = addr
             elif self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"]:
                 best_addr = addr
-                    
+            
+        if best_addr:
+            print(best_addr)
+        else:
+            print("None")
         return best_addr
 
 class Forwarder():
