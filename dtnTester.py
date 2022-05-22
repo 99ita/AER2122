@@ -11,6 +11,6 @@ i = 0
 while True:
     message += f'{i}'
     print(f"sending: '{message}'")
-    fwd.send_packet(message)
+    fwd.send_packet(bytes(message,'utf-8'))
     time.sleep(1)
     i+=1
