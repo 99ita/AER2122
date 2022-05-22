@@ -47,6 +47,8 @@ class NetworkClient():
             header += struct.pack(f"I{len(s2)}s",len(s2),s2)
             header += struct.pack("I",util.gamePort)
             message = header + message
+            print(s1,s2)
+            print(header)
             self.dtn.send_packet(message)
         else:
             self.outSocket.sendto(message, self.serverPair)

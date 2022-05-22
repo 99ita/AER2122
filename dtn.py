@@ -166,11 +166,17 @@ class Forwarder():
                 
                 sizeS, = struct.unpack("I", data[sizeC+4:sizeC+8])
         
-                serverIP = data[sizeC+8:sizeC+sizeS+8].decode('utf-8')
+                serverIp = data[sizeC+8:sizeC+sizeS+8].decode('utf-8')
                 serverPort, = struct.unpack("I", data[sizeC+sizeS+8:sizeC+sizeS+12])
                 data = data[sizeC+sizeS+12:]
 
-                serverPair = (serverIP,serverPort)
+
+                print(clientIp)
+                print(serverIp)
+                print(serverPort)
+                print(data)
+
+                serverPair = (serverIp,serverPort)
 
                 self.wireless_clients.setdefault(serverPair[0],[])
                     
