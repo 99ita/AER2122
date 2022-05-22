@@ -132,6 +132,8 @@ class Forwarder():
         
         self.neighbours = Neighbours(gw,nodeIP)
 
+        self.main = main
+
         self.gw = gw
 
         if gw:
@@ -140,7 +142,7 @@ class Forwarder():
             server_listener_thread.daemon = True
             server_listener_thread.start()
 
-        if main:
+        if self.main:
             self.wait_message()
         else:
             neighbour_listener_thread = threading.Thread(target=self.wait_message)
@@ -171,7 +173,6 @@ class Forwarder():
                 data = data[sizeC+sizeS+12:]
 
 
-                print(clientIp)
                 print(serverIp)
                 print(serverPort)
                 print(data)
@@ -211,13 +212,20 @@ class Forwarder():
             print(f"Packet received from server and forwarded to all wireless clients!")
     
     
-    def send_packet(self, data, server_pair = None):
+    def send_packet(self, data, fst = False, client_ip = None, server_pair = None):
         if self.gw:
             print(f"Sending packet to server at {server_pair}")
             self.outSocket.sendto(data,server_pair)
         else:
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop:
+                if fst: #DTN Header: I src_ip I dst_ip dst_port
+                    s1 = client_ip.encode('utf-8')
+                    s2 = server_pair[0].encode('utf-8')
+                    header = struct.pack(f"I{len(s1)}s",len(s1),s1)
+                    header += struct.pack(f"I{len(s2)}s",len(s2),s2)
+                    header += struct.pack("I",server_pair[1])
+                    data = header + data
                 self.outSocket.sendto(data,(nextHop,util.mobilePort))
                 print(f"Sending packet to best neighbour ({nextHop})")
             else:
