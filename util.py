@@ -11,7 +11,7 @@ mobilePort = 5556
 #Game constants
 wWidth = 860 
 wHeight = 640 
-framerate = 4 #FPS
+framerate = 20 #FPS
 netrate = 1 #Every <netrate> frames a packet will be sent to server
 backgroundFile = 'dark-space-minimal-art-4k-ll.jpg' 
 
