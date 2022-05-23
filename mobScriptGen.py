@@ -28,12 +28,24 @@ def parser():
                         help='Max time',
                         default=30)
 
+    parser.add_argument('-sdp',
+                        help='Normal distribution std deviation (Position)',
+                        default=100)
+
+    parser.add_argument('-sds',
+                        help='Normal distribution std deviation (Speed)',
+                        default=10)
+
+    parser.add_argument('-sdt',
+                        help='Normal distribution std deviation (Time)',
+                        default=1)
+
     value = parser.parse_args()
 
-    return value.n,int(value.s),int(value.d),int(value.p),int(value.t)
+    return value.n,int(value.s),int(value.d),int(value.p),int(value.t),int(value.sdp),int(value.sds),int(value.sdt)
 
 
-nodes, meanSpeed, minDist, meanMovPeriod, maxTime = parser()
+nodes, meanSpeed, minDist, meanMovPeriod, maxTime, sdp, sds, sdt = parser()
 nodesDict = {}
 for n in nodes:
     nodesDict[n] = {}
@@ -41,11 +53,9 @@ for n in nodes:
 minX = 500
 maxX = 900
 minY = 200
-maxY = 650
+maxY = 700
 center = (int((minX+maxX)/2),int((minY+maxY)/2))
-# X 500-900
-# Y 200-650  
-# Center (700,425)
+
 
 def nodesStr():
     r = ""
@@ -69,13 +79,13 @@ def moveStr(n,t,x,y,s):
 
 
 def newPos():
-    x = random.normal(loc=center[0],scale=100)
+    x = random.normal(loc=center[0],scale=sdp)
     while x > maxX or x < minX:
-        x = random.normal(loc=center[0],scale=100)
+        x = random.normal(loc=center[0],scale=sdp)
         
-    y = random.normal(loc=center[1],scale=100)
+    y = random.normal(loc=center[1],scale=sdp)
     while y > maxY or y < minY:
-        y = random.normal(loc=center[1],scale=100)
+        y = random.normal(loc=center[1],scale=sdp)
         
     return (x,y)
 
@@ -89,20 +99,20 @@ def generate():
         nodesDict[n]['time'] = 0
         nodesDict[n]['str'] = ""
         while nodesDict[n]['time'] < maxTime:
-            x = random.normal(loc=center[0],scale=100)
-            y = random.normal(loc=center[1],scale=100)
+            x = random.normal(loc=center[0],scale=sdp)
+            y = random.normal(loc=center[1],scale=sdp)
             while x > maxX or x < minX or y > maxY or y < minY or dist(nodesDict[n]['lastPos'],(x,y)) < 50:
-                x = random.normal(loc=center[0],scale=100)
-                y = random.normal(loc=center[1],scale=100)
+                x = random.normal(loc=center[0],scale=sdp)
+                y = random.normal(loc=center[1],scale=sdp)
 
             nodesDict[n]['lastPos'] = (x,y)
-            speed = random.normal(loc=meanSpeed,scale=10)
+            speed = random.normal(loc=meanSpeed,scale=sds)
             
             nodesDict[n]['str'] += moveStr(n,nodesDict[n]['time'],x,y,speed) 
-            nodesDict[n]['time'] += random.normal(loc=meanMovPeriod,scale=1)
+            nodesDict[n]['time'] += random.normal(loc=meanMovPeriod,scale=sdt)
         
         x,y = nodesDict[n]['firstPos']
-        speed = random.normal(loc=meanSpeed,scale=10)
+        speed = random.normal(loc=meanSpeed,scale=sds)
         nodesDict[n]['str'] += moveStr(n,nodesDict[n]['time'],x,y,speed) 
         
         
