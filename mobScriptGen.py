@@ -11,6 +11,18 @@ def parser():
                         help='Node list',
                         nargs='+',
                         default=[15, 16, 18])
+    
+    parser.add_argument('-x',
+                        help='X min and max',
+                        nargs=2,
+                        type=int,
+                        default=[500, 900])
+
+    parser.add_argument('-y',
+                        help='Y min and max',
+                        nargs=2,
+                        type=int,
+                        default=[200, 650])
 
     parser.add_argument('-s',
                         help='Mean speed', 
@@ -42,18 +54,20 @@ def parser():
 
     value = parser.parse_args()
 
-    return value.n,int(value.s),int(value.d),int(value.p),int(value.t),int(value.sdp),int(value.sds),int(value.sdt)
+    return value.x[0],value.x[1],value.y[0],value.y[1],value.n,int(value.s),int(value.d),int(value.p),int(value.t),int(value.sdp),int(value.sds),int(value.sdt)
+
+minX, maxX, minY, maxY, nodes, meanSpeed, minDist, meanMovPeriod, maxTime, sdp, sds, sdt = parser()
 
 
-nodes, meanSpeed, minDist, meanMovPeriod, maxTime, sdp, sds, sdt = parser()
+print(f"X from {minX} to {maxX}\nY from {minY} to {maxY}")
+print(f"Nodes: {nodes}\nMean speed: {meanSpeed}\nMinimum distance: {minDist}")
+print(f"Mean period between movements: {meanMovPeriod}\nMax time: {maxTime}")
+print(f"Positions standard deviation: {sdp}\nSpeed standard deviation: {sdp}\nTime standard deviation: {sdp}")
+
 nodesDict = {}
 for n in nodes:
     nodesDict[n] = {}
 
-minX = 500
-maxX = 900
-minY = 200
-maxY = 700
 center = (int((minX+maxX)/2),int((minY+maxY)/2))
 
 
@@ -125,4 +139,4 @@ with open("movementScript.scen", 'w+') as f:
     f.seek(0)
     f.write(generate().strip())
 
-print("Done!\n")
+print("\nDone!")
