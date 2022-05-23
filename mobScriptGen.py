@@ -1,8 +1,6 @@
 from statistics import mean
 from numpy import random
 import math
-import matplotlib.pyplot as plt
-import seaborn as sns
 import argparse
 
 
