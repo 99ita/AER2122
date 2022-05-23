@@ -7,6 +7,7 @@ import util
 neighbour_mcast = ("ff02::abcd:1",8080)
 game_mcast = ("ff02::dcba:1",8182)
 beacon_period = 0.5
+print_period = 5
 
 
 class Neighbours():
@@ -26,6 +27,7 @@ class Neighbours():
 
         self.neighbours = {}
         self.gwOn = 0
+        self.curr_best_neighbour = None
 
         self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -45,6 +47,7 @@ class Neighbours():
     def beacon_sender(self):
         print("[Neighbours] Beacon sender thread started!")
         s = bytes(self.ip, 'utf-8')
+        last = time.time()
         while True:
             if not self.gw:
                 self.score = round((self.gateway_count*10 + self.gwon_count)/(time.time()-self.fstTime))
@@ -53,7 +56,18 @@ class Neighbours():
             data += struct.pack("I%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
             self.check_neighbour_timeout()
+            
+            newBest = self.best_neighbour_addr()
+            if self.curr_best_neighbour != newBest:
+                self.curr_best_neighbour = newBest
+
             time.sleep(self.beacon_period)
+
+            if time.time() - last > print_period:
+                if self.curr_best_neighbour != None:
+                    print(f"New best neighbour {self.curr_best_neighbour}!\n")
+                else:
+                    print(f"No neighbours!")
 
     def beacon_receiver(self):
         print("[Neighbours] Beacon receiver thread started!")
@@ -190,7 +204,7 @@ class Forwarder():
 
 
     def server_listener(self):
-        print("[Node {self.nodeIP}] Server listener thread started!")
+        print(f"[Node {self.nodeIP}] Server listener thread started!")
 
         server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         server_in_socket.bind((listeningIP,util.gamePort))
@@ -199,29 +213,29 @@ class Forwarder():
         while True:
             try:
                 data,adr = server_in_socket.recvfrom(1024)
-                print(f"[Node {self.nodeIP}] Packet received from server!")
             except:
                 print("[Node {self.nodeIP}] Server listener died!")
                 server_in_socket.close()
                 exit()
 
+
+            print(f"[Node {self.nodeIP}] Packet received from server at {adr[0]}, forwarding to {self.wireless_clients[adr[0]]}\n")
             for addr in self.wireless_clients[adr[0]]:
-                print(f"[Node {self.nodeIP}] Sending packet to {addr}!")
                 socketToWan.sendto(data,(addr,util.gamePort))
 
     
     
     def send_packet(self, data, pktFrom = '', pktOrigin = '', fst = False, server_pair = None):
         if self.gw:
-            print(f"[Node {self.nodeIP}] Sending packet to server at {server_pair}")
+            print(f"[Node {self.nodeIP}] Sending packet to server at {server_pair}\n")
             self.outSocket.sendto(data,server_pair)
         else:
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop == pktFrom:
-                print(f"[Node {self.nodeIP}] Best neighbour is the one who sent the packet!")
+                print(f"[Node {self.nodeIP}] Best neighbour is the one who sent the packet, packet dropped!\n")
                 nextHop = None
             elif nextHop == pktOrigin:
-                print(f"[Node {self.nodeIP}] Best neighbour is the one who created the packet!")
+                print(f"[Node {self.nodeIP}] Best neighbour is the one who created the packet, packet droped!\n")
                 nextHop = None
             if nextHop:
                 if fst: #DTN Header: I src_ip I dst_ip dst_port
@@ -235,10 +249,8 @@ class Forwarder():
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
                     print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})\n")
                 except:
-                    print(f"[Node {self.nodeIP}] Packet dropped!\n")
+                    print(f"[Node {self.nodeIP}] Sending error, packet dropped!\n")
 
-            else:
-                print(f"[Node {self.nodeIP}] Packet dropped!\n")
 
 
 
