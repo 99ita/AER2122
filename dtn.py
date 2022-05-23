@@ -57,7 +57,7 @@ class Neighbours():
             self.sock.sendto(data, neighbour_mcast)
             self.check_neighbour_timeout()
             
-            
+
             newBest = self.best_neighbour_addr()
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
@@ -201,7 +201,7 @@ class Forwarder():
                 if clientIp not in self.wireless_clients[serverPair[0]]:
                     self.wireless_clients[serverPair[0]].append(clientIp)
 
-            print(f"[Node {self.nodeIP}] Packet received from {addr[0]}")
+            #print(f"[Node {self.nodeIP}] Packet received from {addr[0]}")
             self.send_packet(data, pktFrom=addr[0], pktOrigin=clientIp, server_pair=serverPair)
 
 
@@ -222,7 +222,7 @@ class Forwarder():
                 exit()
 
 
-            print(f"[Node {self.nodeIP}] Packet received from server at {adr[0]}, forwarding to {self.wireless_clients[adr[0]]}\n")
+            #print(f"[Node {self.nodeIP}] Packet received from server at {adr[0]}, forwarding to {self.wireless_clients[adr[0]]}\n")
             for addr in self.wireless_clients[adr[0]]:
                 socketToWan.sendto(data,(addr,util.gamePort))
 
@@ -230,7 +230,7 @@ class Forwarder():
     
     def send_packet(self, data, pktFrom = '', pktOrigin = '', fst = False, server_pair = None):
         if self.gw:
-            print(f"[Node {self.nodeIP}] Sending packet to server at {server_pair}\n")
+            #print(f"[Node {self.nodeIP}] Sending packet to server at {server_pair}\n")
             self.outSocket.sendto(data,server_pair)
         else:
             nextHop = self.neighbours.best_neighbour_addr()
@@ -250,7 +250,7 @@ class Forwarder():
                     data = header + data
                 try:
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
-                    print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})\n")
+                    #print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})\n")
                 except:
                     print(f"[Node {self.nodeIP}] Sending error, packet dropped!\n")
 
