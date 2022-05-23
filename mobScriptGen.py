@@ -3,12 +3,43 @@ from numpy import random
 import math
 import matplotlib.pyplot as plt
 import seaborn as sns
+import argparse
 
-maxTime = 30 #sec
-meanSpeed = 30
-meanMovPeriod = 5 #sec
-minDist = 100
-nodes = [15,16,18]
+
+def parser():
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument('-n',
+                        help='Node list',
+                        nargs='+',
+                        default=[15, 16, 18])
+
+    parser.add_argument('-s',
+                        help='Mean speed',
+                        nargs=1, 
+                        default=30)
+
+    parser.add_argument('-d',
+                        help='Minimum movement distance',
+                        nargs=1,
+                        default=100)
+
+    parser.add_argument('-p',
+                        help='Mean period between movements',
+                        nargs=1,
+                        default=5)
+
+    parser.add_argument('-t',
+                        help='Max time',
+                        nargs=1,
+                        default=30)
+
+    value = parser.parse_args()
+
+    return value.n,value.s,value.d,value.p,value.t
+
+
+nodes, meanSpeed, minDist, meanMovPeriod, maxTime = parser()
 nodesDict = {}
 for n in nodes:
     nodesDict[n] = {}
