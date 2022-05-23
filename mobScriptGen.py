@@ -13,28 +13,24 @@ def parser():
                         default=[15, 16, 18])
 
     parser.add_argument('-s',
-                        help='Mean speed',
-                        nargs=1, 
+                        help='Mean speed', 
                         default=30)
 
     parser.add_argument('-d',
                         help='Minimum movement distance',
-                        nargs=1,
                         default=100)
 
     parser.add_argument('-p',
                         help='Mean period between movements',
-                        nargs=1,
                         default=5)
 
     parser.add_argument('-t',
                         help='Max time',
-                        nargs=1,
                         default=30)
 
     value = parser.parse_args()
 
-    return value.n,value.s,value.d,value.p,value.t
+    return value.n,int(value.s),int(value.d),int(value.p),int(value.t)
 
 
 nodes, meanSpeed, minDist, meanMovPeriod, maxTime = parser()
