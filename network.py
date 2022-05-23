@@ -69,9 +69,9 @@ class NetworkClient():
                 dif = self.metrics['nPackets']/(self.metrics['now']-self.metrics['lastTime'])
             self.metrics['lastPrinted'] = self.metrics['curr']
             lossPerc = self.metrics['lost']/(self.metrics['curr'] - self.metrics['first'] + 1)
-            print(f"Current packetID: {packetID}")
-            print(f"        lost {self.metrics['lost']} packets so far ({lossPerc}%)") 
-            print(f"        {dif}packets/s")
+            print(f"\nCurrent packetID: {packetID}")
+            print(f"        lost {self.metrics['lost']} packets so far ({round(lossPerc,2)}%)") 
+            print(f"        {round(dif,2)} packets/s")
             self.metrics['nPackets'] = 0
             self.metrics['lastTime'] = self.metrics['now']
 
@@ -212,9 +212,9 @@ class NetworkServer():
 
         if self.metrics[color]['curr'] - self.metrics[color]['lastPrinted'] >= printInterval:
             self.metrics[color]['lastPrinted'] = self.metrics[color]['curr']
-            lossPerc = 0#self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
+            lossPerc = self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
             print("Player", color, "current packetID: ", packetID)
-            print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , lossPerc , "%)\n") 
+            print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , round(lossPerc,2) , "%)\n") 
     
     
     #Generates the message to send to a client
