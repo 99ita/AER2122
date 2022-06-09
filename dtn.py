@@ -85,6 +85,7 @@ class Neighbours():
                 if c != -1:
                     if gwon >= 1:
                         self.gwon_count += 1
+                        print(self.gwon_count)
                     if gwon == 1:
                         gateway = 'gateway'
                     else:
