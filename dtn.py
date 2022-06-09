@@ -50,7 +50,7 @@ class Neighbours():
         last = time.time()
         while True:
             if not self.gw:
-                self.score = round((self.gateway_count*10 + self.gwon_count)/(time.time()-self.fstTime))
+                self.score = round((self.gateway_count*100 + self.gwon_count*10)/(time.time()-self.fstTime))
             data = struct.pack("i",self.gwOn)
             data += struct.pack("i",self.score)
             data += struct.pack("I%ds" % (len(s),), len(s), s)
