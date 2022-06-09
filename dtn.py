@@ -65,7 +65,7 @@ class Neighbours():
                     if self.curr_best_neighbour != None:
                         print(f"\nNew best neighbour {self.curr_best_neighbour}!\n")
                     else:
-                        print(f"\nNo neighbours!\n")
+                        print(f"\nNo better neighbours!\n")
                     last = time.time()
 
             time.sleep(self.beacon_period)
@@ -253,7 +253,9 @@ class Forwarder():
                     #print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})\n")
                 except:
                     print(f"[Node {self.nodeIP}] Sending error, packet dropped!\n")
-
+            else:
+                #save the packet
+                return
 
 
 
