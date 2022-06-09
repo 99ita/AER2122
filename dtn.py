@@ -60,13 +60,10 @@ class Neighbours():
             newBest = self.best_neighbour_addr()
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
-            
-            if time.time() - last > print_period:
                 if self.curr_best_neighbour != None:
-                    print(f"\nNew best neighbour {self.curr_best_neighbour}!\n")
+                    print(f"\nCurrent best neighbour {self.curr_best_neighbour}!\n")
                 else:
-                    print(f"\nNo better neighbours!\n")
-                last = time.time()           
+                    print(f"\nNo better neighbours!\n")          
                 
 
             time.sleep(self.beacon_period)
