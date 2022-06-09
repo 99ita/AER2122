@@ -57,13 +57,14 @@ class Neighbours():
             self.sock.sendto(data, neighbour_mcast)
             self.check_neighbour_timeout()
 
+
             newBest = self.best_neighbour_addr()
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
                 if self.curr_best_neighbour != None:
                     print(f"\nCurrent best neighbour {self.curr_best_neighbour} ({self.neighbours[self.curr_best_neighbour]['score']})!\n")
                 else:
-                    print(f"\nNo better neighbours!\n")          
+                    print(f"\nNo better neighbours ({self.score})!\n")          
                 
 
             time.sleep(self.beacon_period)
