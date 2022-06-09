@@ -61,7 +61,7 @@ class Neighbours():
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
                 if self.curr_best_neighbour != None:
-                    print(f"\nCurrent best neighbour {self.curr_best_neighbour}!\n")
+                    print(f"\nCurrent best neighbour {self.curr_best_neighbour} ({self.neighbours[self.curr_best_neighbour]['score']})!\n")
                 else:
                     print(f"\nNo better neighbours!\n")          
                 
