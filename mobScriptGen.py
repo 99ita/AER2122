@@ -1,4 +1,3 @@
-from statistics import mean
 from numpy import random
 import math
 import argparse
@@ -52,11 +51,15 @@ def parser():
                         help='Normal distribution std deviation (Time)',
                         default=1)
 
+    parser.add_argument('-stop',
+                        help='No movement',
+                        action='store_true')
+
     value = parser.parse_args()
 
-    return value.x[0],value.x[1],value.y[0],value.y[1],value.n,int(value.s),int(value.d),int(value.p),int(value.t),int(value.sdp),int(value.sds),int(value.sdt)
+    return value.x[0],value.x[1],value.y[0],value.y[1],value.n,int(value.s),int(value.d),int(value.p),int(value.t),int(value.sdp),int(value.sds),int(value.sdt),value.stop
 
-minX, maxX, minY, maxY, nodes, meanSpeed, minDist, meanMovPeriod, maxTime, sdp, sds, sdt = parser()
+minX, maxX, minY, maxY, nodes, meanSpeed, minDist, meanMovPeriod, maxTime, sdp, sds, sdt, stop = parser()
 
 
 print(f"X from {minX} to {maxX}\nY from {minY} to {maxY}")
@@ -130,8 +133,10 @@ def generate():
         nodesDict[n]['str'] += moveStr(n,nodesDict[n]['time'],x,y,speed) 
         
         
-
-    return nodesStr()+movesStr()       
+    if stop:
+        return nodesStr()
+    else:
+        return nodesStr()+movesStr()       
         
 
 with open("movementScript.scen", 'w+') as f:
