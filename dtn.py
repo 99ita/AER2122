@@ -5,7 +5,6 @@ import time
 import util
 
 neighbour_mcast = ("ff02::abcd:1",8080)
-game_mcast = ("ff02::dcba:1",8182)
 beacon_period = 0.5
 print_period = 5
 
