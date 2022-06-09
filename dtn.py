@@ -56,17 +56,18 @@ class Neighbours():
             data += struct.pack("I%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
             self.check_neighbour_timeout()
-            
 
             newBest = self.best_neighbour_addr()
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
-                if time.time() - last > print_period:
-                    if self.curr_best_neighbour != None:
-                        print(f"\nNew best neighbour {self.curr_best_neighbour}!\n")
-                    else:
-                        print(f"\nNo better neighbours!\n")
-                    last = time.time()
+            
+            if time.time() - last > print_period:
+                if self.curr_best_neighbour != None:
+                    print(f"\nNew best neighbour {self.curr_best_neighbour}!\n")
+                else:
+                    print(f"\nNo better neighbours!\n")
+                last = time.time()           
+                
 
             time.sleep(self.beacon_period)
 
@@ -138,7 +139,7 @@ class Neighbours():
                 else:
                     if self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"]:
                         best_addr = addr
-            elif self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"]:
+            elif self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"] and self.neighbours[best_addr]["gw_on"] == 0:
                 best_addr = addr
         return best_addr
 
