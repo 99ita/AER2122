@@ -54,8 +54,6 @@ class Neighbours():
             data += struct.pack("i",self.score)
             data += struct.pack("I%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
-            self.check_neighbour_timeout()
-
 
             newBest = self.best_neighbour_addr()
             if self.curr_best_neighbour != newBest:
@@ -103,10 +101,10 @@ class Neighbours():
 
 
             
-    def check_neighbour_timeout(self):
+    def check_neighbours_timeout(self):
         to = []
         for addr in self.neighbours.keys():
-            if time.time() - self.neighbours[addr]["time"] >= 2*self.beacon_period:
+            if time.time() - self.neighbours[addr]["time"] >= 1.5*self.beacon_period:
                 if self.neighbours[addr]["score"] != -1:
                     print(f"[Neighbours] Neighbour at {addr} timed out!\n")
                 else:
@@ -119,6 +117,7 @@ class Neighbours():
 
 
     def best_neighbour_addr(self):
+        self.check_neighbours_timeout()
         best_addr = None
         fst = True
         if len(self.neighbours.keys()) < 1:
