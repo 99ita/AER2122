@@ -48,7 +48,6 @@ class Neighbours():
     def beacon_sender(self):
         print("[Neighbours] Beacon sender thread started!")
         s = bytes(self.ip, 'utf-8')
-        last = time.time()
         while True:
             if not self.gw:
                 self.score = round((self.gateway_count*100 + self.gwon_count*10)/(time.time()-self.fstTime))
@@ -216,7 +215,7 @@ class Forwarder():
                 if clientIp not in self.wireless_clients[serverPair[0]]:
                     self.wireless_clients[serverPair[0]].append(clientIp)
 
-            print(f"[Forwarder] Packet received from {addr[0]}")
+            print(f"[Forwarder] Packet received from {addr[0]} ({data.decode('utf-8')})")
             self.send_packet(data, pktFrom=addr[0], pktOrigin=clientIp, server_pair=serverPair)
 
 
