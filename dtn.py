@@ -11,11 +11,12 @@ print_period = 5
 
 
 class Neighbours():
-    def __init__(self,gw,ip,beacon_period = beacon_period):
+    def __init__(self,gw,ip,fwd,beacon_period = beacon_period):
         self.fstTime = time.time()
         self.gw = gw
         self.ip = ip
         self.beacon_period = beacon_period
+        self.fwd = fwd
 
         self.gateway_count = 0
         if self.gw:
@@ -60,9 +61,10 @@ class Neighbours():
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
                 if self.curr_best_neighbour != None:
-                    print(f"\nCurrent best neighbour {self.curr_best_neighbour} ({self.neighbours[self.curr_best_neighbour]['score']})!\n")
+                    print(f"\n[Neighbours] Current best neighbour {self.curr_best_neighbour} ({self.neighbours[self.curr_best_neighbour]['score']})!\n")
+                    self.fwd.clear_queue()
                 else:
-                    print(f"\nNo better neighbours ({self.score})!\n")          
+                    print(f"\n[Neighbours] No better neighbours ({self.score})!\n")          
                 
             time.sleep(self.beacon_period)
 
@@ -156,13 +158,16 @@ class Neighbours():
 class Forwarder():
     def __init__(self, nodeIP, gw = False, listeningIP = None, main = False):
         self.nodeIP = nodeIP
+        self.listeningIP = listeningIP
         
         self.neighbour_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         self.neighbour_in_socket.bind((nodeIP,util.mobilePort))
 
         self.outSocket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         
-        self.neighbours = Neighbours(gw,nodeIP)
+        self.packetQueue = []
+
+        self.neighbours = Neighbours(gw,nodeIP,self)
 
         self.main = main
 
@@ -220,7 +225,7 @@ class Forwarder():
         print(f"[Node {self.nodeIP}] Server listener thread started!")
 
         server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-        server_in_socket.bind((listeningIP,util.gamePort))
+        server_in_socket.bind((self.listeningIP,util.gamePort))
         socketToWan = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         
         while True:
@@ -253,10 +258,10 @@ class Forwarder():
 
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop == pktFrom:
-                print(f"[Node {self.nodeIP}] Best neighbour is the one who sent the packet, packet dropped!\n")
+                print(f"[Node {self.nodeIP}] Best neighbour is the one who sent the packet, packet added to queue!\n")
                 nextHop = None
             elif nextHop == pktOrigin:
-                print(f"[Node {self.nodeIP}] Best neighbour is the one who created the packet, packet droped!\n")
+                print(f"[Node {self.nodeIP}] Best neighbour is the one who created the packet, packet added to queue!\n")
                 nextHop = None
             if nextHop:
                 try:
@@ -264,10 +269,41 @@ class Forwarder():
                     #print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})\n")
                 except:
                     print(traceback.format_exc())
-                    print(f"[Node {self.nodeIP}] Sending error, packet dropped!\n")
+                    print(f"[Node {self.nodeIP}] Sending error, packet added to queue!\n")
+                    pktEntry = []
+                    pktEntry.append(pktFrom)
+                    pktEntry.append(pktOrigin)
+                    pktEntry.append(data)
+                    self.packetQueue.append(pktEntry)
             else:
-                #save the packet
+                pktEntry = []
+                pktEntry.append(pktFrom)
+                pktEntry.append(pktOrigin)
+                pktEntry.append(data)
+                self.packetQueue.append(pktEntry)
                 return
+
+    def clear_queue(self):
+        nextHop = self.neighbours.best_neighbour_addr()
+        rem = []
+        if len(self.packetQueue) < 1:
+            return
+        print(f"[Node {self.nodeIP}] Atempting to clear packet queue ({len(self.packetQueue)} packets)...")
+        for entry in self.packetQueue:
+            success = False
+            if nextHop != entry[0] and nextHop != entry[1]: 
+                try:
+                    self.outSocket.sendto(entry[2],(nextHop,util.mobilePort))
+                    success = True
+                    print(f"[Node {self.nodeIP}] Sending queued packet to best neighbour ({nextHop})\n")
+                except:
+                    print(traceback.format_exc())
+            if success:
+                rem.append(entry)
+        for entry in rem:
+            self.packetQueue.remove(entry)
+        if len(self.packetQueue) < 1:
+            print("Queue empty!")
 
 
 
