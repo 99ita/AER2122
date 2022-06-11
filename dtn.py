@@ -265,7 +265,7 @@ class Forwarder():
             if nextHop:
                 try:
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
-                    print(f"[Forwarder] Sending packet to best neighbour ({nextHop})\n")
+                    print(f"[Forwarder] Sending packet to best neighbour ({nextHop}) ({data})\n")
                 except:
                     print(traceback.format_exc())
                     print(f"[Forwarder] Sending error, packet added to queue!\n")
