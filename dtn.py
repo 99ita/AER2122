@@ -55,13 +55,13 @@ class Neighbours():
             data += struct.pack("i",self.score)
             data += struct.pack("I%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
+            self.fwd.clear_queue()
 
             newBest = self.best_neighbour_addr()
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
                 if self.curr_best_neighbour != None:
                     print(f"\n[Neighbours] Current best neighbour {self.curr_best_neighbour} ({self.neighbours[self.curr_best_neighbour]['score']})!\n")
-                    self.fwd.clear_queue()
                 else:
                     print(f"\n[Neighbours] No better neighbours ({self.score})!\n")          
                 
@@ -288,14 +288,14 @@ class Forwarder():
         rem = []
         if len(self.packetQueue) < 1:
             return
-        print(f"[Forwarder] Atempting to clear packet queue ({len(self.packetQueue)} packets)...")
+        print(f"\n[Forwarder] Atempting to clear packet queue ({len(self.packetQueue)} packets)...")
         for entry in self.packetQueue:
             success = False
             if nextHop != entry[0] and nextHop != entry[1]: 
                 try:
                     self.outSocket.sendto(entry[2],(nextHop,util.mobilePort))
                     success = True
-                    print(f"[Forwarder] Sending queued packet to best neighbour ({nextHop})\n")
+                    print(f"[Forwarder] Sending queued packet to best neighbour ({nextHop})")
                 except:
                     print(traceback.format_exc())
             if success:
@@ -303,7 +303,7 @@ class Forwarder():
         for entry in rem:
             self.packetQueue.remove(entry)
         if len(self.packetQueue) < 1:
-            print("[Forwarder] Queue empty!")
+            print("[Forwarder] Queue empty!\n")
 
 
 
