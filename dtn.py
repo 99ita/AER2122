@@ -3,6 +3,7 @@ import struct
 import threading
 import time
 import util
+import traceback
 
 neighbour_mcast = ("ff02::abcd:1",8080)
 beacon_period = 0.5
@@ -63,7 +64,6 @@ class Neighbours():
                 else:
                     print(f"\nNo better neighbours ({self.score})!\n")          
                 
-
             time.sleep(self.beacon_period)
 
             
@@ -138,6 +138,18 @@ class Neighbours():
                         best_addr = addr
             elif self.neighbours[addr]["score"] > self.neighbours[best_addr]["score"] and self.neighbours[best_addr]["gw_on"] == 0:
                 best_addr = addr
+        
+        if self.score == -1:
+            best_addr = None
+        elif self.gwOn > 0: 
+            if self.neighbours[best_addr]["gw_on"] < 1:
+                best_addr = None
+            elif self.score > self.neighbours[best_addr]["score"]:
+                best_addr = None
+        elif self.neighbours[best_addr]["gw_on"] < 1 and self.score > self.neighbours[best_addr]["score"]:
+            best_addr = None
+
+        
         return best_addr
 
 
@@ -231,6 +243,14 @@ class Forwarder():
             #print(f"[Node {self.nodeIP}] Sending packet to server at {server_pair}\n")
             self.outSocket.sendto(data,server_pair)
         else:
+            if fst: #DTN Header: I src_ip I dst_ip dst_port
+                s1 = self.nodeIP.encode('utf-8')
+                s2 = server_pair[0].encode('utf-8')
+                header = struct.pack(f"I{len(s1)}s",len(s1),s1)
+                header += struct.pack(f"I{len(s2)}s",len(s2),s2)
+                header += struct.pack("I",server_pair[1])
+                data = header + data
+
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop == pktFrom:
                 print(f"[Node {self.nodeIP}] Best neighbour is the one who sent the packet, packet dropped!\n")
@@ -239,17 +259,11 @@ class Forwarder():
                 print(f"[Node {self.nodeIP}] Best neighbour is the one who created the packet, packet droped!\n")
                 nextHop = None
             if nextHop:
-                if fst: #DTN Header: I src_ip I dst_ip dst_port
-                    s1 = self.nodeIP.encode('utf-8')
-                    s2 = server_pair[0].encode('utf-8')
-                    header = struct.pack(f"I{len(s1)}s",len(s1),s1)
-                    header += struct.pack(f"I{len(s2)}s",len(s2),s2)
-                    header += struct.pack("I",server_pair[1])
-                    data = header + data
                 try:
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
                     #print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})\n")
                 except:
+                    print(traceback.format_exc())
                     print(f"[Node {self.nodeIP}] Sending error, packet dropped!\n")
             else:
                 #save the packet
