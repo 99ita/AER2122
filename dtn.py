@@ -216,13 +216,13 @@ class Forwarder():
                 if clientIp not in self.wireless_clients[serverPair[0]]:
                     self.wireless_clients[serverPair[0]].append(clientIp)
 
-            #print(f"[Node {self.nodeIP}] Packet received from {addr[0]}")
+            print(f"[Forwarder] Packet received from {addr[0]}")
             self.send_packet(data, pktFrom=addr[0], pktOrigin=clientIp, server_pair=serverPair)
 
 
 
     def server_listener(self):
-        print(f"[Node {self.nodeIP}] Server listener thread started!")
+        print(f"[Forwarder] Server listener thread started!")
 
         server_in_socket = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
         server_in_socket.bind((self.listeningIP,util.gamePort))
@@ -232,12 +232,12 @@ class Forwarder():
             try:
                 data,adr = server_in_socket.recvfrom(1024)
             except:
-                print("[Node {self.nodeIP}] Server listener died!")
+                print("[Forwarder] Server listener died!")
                 server_in_socket.close()
                 exit()
 
 
-            #print(f"[Node {self.nodeIP}] Packet received from server at {adr[0]}, forwarding to {self.wireless_clients[adr[0]]}\n")
+            print(f"[Forwarder] Packet received from server at {adr[0]}, forwarding to {self.wireless_clients[adr[0]]}\n")
             for addr in self.wireless_clients[adr[0]]:
                 socketToWan.sendto(data,(addr,util.gamePort))
 
@@ -245,7 +245,7 @@ class Forwarder():
     
     def send_packet(self, data, pktFrom = '', pktOrigin = '', fst = False, server_pair = None):
         if self.gw:
-            #print(f"[Node {self.nodeIP}] Sending packet to server at {server_pair}\n")
+            print(f"[Forwarder] Sending packet to server at {server_pair}\n")
             self.outSocket.sendto(data,server_pair)
         else:
             if fst: #DTN Header: I src_ip I dst_ip dst_port
@@ -258,18 +258,18 @@ class Forwarder():
 
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop == pktFrom:
-                print(f"[Node {self.nodeIP}] Best neighbour is the one who sent the packet, packet added to queue!\n")
+                print(f"[Forwarder] Best neighbour is the one who sent the packet, packet added to queue!\n")
                 nextHop = None
             elif nextHop == pktOrigin:
-                print(f"[Node {self.nodeIP}] Best neighbour is the one who created the packet, packet added to queue!\n")
+                print(f"[Forwarder] Best neighbour is the one who created the packet, packet added to queue!\n")
                 nextHop = None
             if nextHop:
                 try:
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
-                    #print(f"[Node {self.nodeIP}] Sending packet to best neighbour ({nextHop})\n")
+                    print(f"[Forwarder] Sending packet to best neighbour ({nextHop})\n")
                 except:
                     print(traceback.format_exc())
-                    print(f"[Node {self.nodeIP}] Sending error, packet added to queue!\n")
+                    print(f"[Forwarder] Sending error, packet added to queue!\n")
                     pktEntry = []
                     pktEntry.append(pktFrom)
                     pktEntry.append(pktOrigin)
@@ -288,14 +288,14 @@ class Forwarder():
         rem = []
         if len(self.packetQueue) < 1:
             return
-        print(f"[Node {self.nodeIP}] Atempting to clear packet queue ({len(self.packetQueue)} packets)...")
+        print(f"[Forwarder] Atempting to clear packet queue ({len(self.packetQueue)} packets)...")
         for entry in self.packetQueue:
             success = False
             if nextHop != entry[0] and nextHop != entry[1]: 
                 try:
                     self.outSocket.sendto(entry[2],(nextHop,util.mobilePort))
                     success = True
-                    print(f"[Node {self.nodeIP}] Sending queued packet to best neighbour ({nextHop})\n")
+                    print(f"[Forwarder] Sending queued packet to best neighbour ({nextHop})\n")
                 except:
                     print(traceback.format_exc())
             if success:
@@ -303,7 +303,7 @@ class Forwarder():
         for entry in rem:
             self.packetQueue.remove(entry)
         if len(self.packetQueue) < 1:
-            print("Queue empty!")
+            print("[Forwarder] Queue empty!")
 
 
 
