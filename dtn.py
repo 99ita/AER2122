@@ -257,10 +257,10 @@ class Forwarder():
 
             nextHop = self.neighbours.best_neighbour_addr()
             if nextHop == pktFrom:
-                print(f"[Forwarder] Best neighbour is the one who sent the packet, packet added to queue!\n")
+                print(f"[Forwarder] Best neighbour is the one who sent the packet!\n")
                 nextHop = None
             elif nextHop == pktOrigin:
-                print(f"[Forwarder] Best neighbour is the one who created the packet, packet added to queue!\n")
+                print(f"[Forwarder] Best neighbour is the one who created the packet!\n")
                 nextHop = None
             if nextHop:
                 try:
@@ -275,6 +275,7 @@ class Forwarder():
                     pktEntry.append(data)
                     self.packetQueue.append(pktEntry)
             else:
+                print("[Forwarder] Packet added to queue!")
                 pktEntry = []
                 pktEntry.append(pktFrom)
                 pktEntry.append(pktOrigin)
