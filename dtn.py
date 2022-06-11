@@ -215,7 +215,7 @@ class Forwarder():
                 if clientIp not in self.wireless_clients[serverPair[0]]:
                     self.wireless_clients[serverPair[0]].append(clientIp)
 
-            print(f"[Forwarder] Packet received from {addr[0]} ({data.decode('utf-8')})")
+            print(f"[Forwarder] Packet received from {addr[0]} ({data})")
             self.send_packet(data, pktFrom=addr[0], pktOrigin=clientIp, server_pair=serverPair)
 
 
