@@ -119,11 +119,11 @@ class NetworkClient():
         try:
             while True:
                 data,addr = self.inSocket.recvfrom(1024)
-                packetID,timestamp,nJogs = struct.unpack("!Hdh",data[:8])
+                packetID,timestamp,nJogs = struct.unpack("!Hdh",data[:12])
                 print(time.time(),timestamp)
                 self.metrics['delays'].append(100*(time.time()-timestamp))
-                playersBArr = data[8:8+(17*nJogs)]
-                shotsBArr = data[8+(17*nJogs):]
+                playersBArr = data[12:12+(17*nJogs)]
+                shotsBArr = data[12+(17*nJogs):]
 
                 
                 
@@ -172,9 +172,9 @@ class NetworkServer():
                 self.inSocket.close()
                 print("Server timed out!")
                 exit()
-            packetID,timestamp = struct.unpack('!Hd',data[:6])
+            packetID,timestamp = struct.unpack('!Hd',data[:10])
 
-            playerArr = data[6:23]
+            playerArr = data[10:27]
             p = util.sPlayer(playerArr,addr)
             if p.color in self.metrics: 
                 self.metrics[p.color]['delays'].append(100*(time.time()-timestamp))
@@ -185,8 +185,8 @@ class NetworkServer():
             self.players[p.color] = p
             self.shots[p.color] = []
 
-            fst = 23
-            snd = 40
+            fst = 27
+            snd = 44
             while snd <= len(data):
                 try:
                     self.shots[p.color].append(util.sShot(data[fst:snd]))
