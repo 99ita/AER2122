@@ -17,4 +17,4 @@ while True:
             print("Packet Lost!")
             lost += data-last
         last = data
-    print(data, f" loss {round(100*lost/data,2)}%")
+    print(data, f" loss {round(100*lost/(data+1),2)}%")
