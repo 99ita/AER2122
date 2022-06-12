@@ -126,12 +126,6 @@ class Player():
     #Creates a string to be sent to the server
     def toBytes(self): 
         return bytearray(struct.pack('!fffhh?',self.x,self.y,self.ang,util.encode_color(self.color),self.health,self.shield))   
-        '''if self.shield:
-            shld = ',1'
-        else:
-            shld = ',0'
-        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.health) + shld + '_'
-        '''
 
     #Draws this entity on 'win'
     def draw(self, win):
@@ -176,6 +170,7 @@ class Player():
         if self.y < 0:
             self.y = 0#HEIGHT + self.y
 
+    #Bot movement decision making
     def move_random(self):
         aAuto = False
         dAuto = False
@@ -358,21 +353,8 @@ class Game():
         self.player.draw(win)
         pg.display.flip()
 
-        ''' def first_screen(self):
-        run = True
-        while run:
-            win.fill
-            keys = pg.key.get_pressed()'''
-
-        
-        
-
     
     def main(self):
-        #q = self.first_screen()
-        #if q:
-         #   exit()
-
         n = network.NetworkClient(self)
         t = threading.Thread(target=n.serverListener)
         t.daemon = True

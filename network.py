@@ -36,7 +36,7 @@ class NetworkClient():
             
 
     def send(self,player,shots):
-        message = bytearray(struct.pack('!i',self.packetID)) + player.toBytes()
+        message = bytearray(struct.pack('!Hf',self.packetID,time.time())) + player.toBytes()
         for s in shots:
             message += s.toBytes()
         
@@ -55,7 +55,7 @@ class NetworkClient():
             self.metrics['first'] = int(packetID)
             self.metrics['curr'] = int(packetID)
             self.metrics['lost'] = 0
-            self.metrics['nPackets'] = 0
+            self.metrics['nPackets'] = 1
             self.metrics['lastTime'] = time.time()
         else:
             self.metrics['nPackets'] += 1
@@ -68,12 +68,17 @@ class NetworkClient():
             if not fst: 
                 dif = self.metrics['nPackets']/(self.metrics['now']-self.metrics['lastTime'])
             self.metrics['lastPrinted'] = self.metrics['curr']
-            lossPerc = self.metrics['lost']/(self.metrics['curr'] - self.metrics['first'] + 1)
+            lossPerc = 100*self.metrics['lost']/(self.metrics['curr'] - self.metrics['first'] + 1)
+            
             print(f"\nCurrent packetID: {packetID}")
             print(f"        lost {self.metrics['lost']} packets so far ({round(lossPerc,2)}%)") 
-            print(f"        {round(dif,2)} packets/s")
+            print(f"        {round(dif,2)} packets/s") 
+            if len(self.metrics['delays'] > 0):
+                print(f"        average delay: {round(sum(self.metrics['delays'])/len(self.metrics['delays']))} ms")
+            
             self.metrics['nPackets'] = 0
             self.metrics['lastTime'] = self.metrics['now']
+            self.metrics['delays'] = []
 
 
         return False
@@ -110,12 +115,16 @@ class NetworkClient():
     def serverListener(self):
         print("Server listener thread started...\n")
         fst = True
+        self.metrics['delays'] = []
         try:
             while True:
                 data,addr = self.inSocket.recvfrom(1024)
-                packetID,nJogs = struct.unpack("!hh",data[:4])
+                packetID,timestamp,nJogs = struct.unpack("!Hfh",data[:4])
+                self.metrics['delays'].append(100*(time.time()-timestamp))
                 playersBArr = data[4:4+(17*nJogs)]
                 shotsBArr = data[4+(17*nJogs):]
+
+                
                 
                 if 'curr' in self.metrics:
                     if packetID < self.metrics['curr']:
@@ -162,9 +171,9 @@ class NetworkServer():
                 self.inSocket.close()
                 print("Server timed out!")
                 exit()
-            packetID, = struct.unpack('!i',data[:4])
+            packetID,timestamp = struct.unpack('!Hf',data[:6])
 
-            playerArr = data[4:21]
+            playerArr = data[6:23]
             p = util.sPlayer(playerArr,addr)
             if p.color in self.metrics: 
                 if packetID < self.metrics[p.color]['curr']:
@@ -174,8 +183,8 @@ class NetworkServer():
             self.players[p.color] = p
             self.shots[p.color] = []
 
-            fst = 21
-            snd = 38
+            fst = 23
+            snd = 40
             while snd <= len(data):
                 try:
                     self.shots[p.color].append(util.sShot(data[fst:snd]))
@@ -183,8 +192,7 @@ class NetworkServer():
                     snd += 17
                 except:
                     break
-            currTime = datetime.utcnow()
-            self.sessionControl(p.color, packetID, currTime, addr, util.gamePort)
+            self.sessionControl(p.color, packetID, addr, util.gamePort)
             self.resolveHits()
 
     def resolveHits(self):
@@ -198,36 +206,53 @@ class NetworkServer():
 
 
     #Launches a client thread when a session is new or updates the session metrics
-    def sessionControl(self, color, packetID, time, addr, clientPort):
+    def sessionControl(self, color, packetID, addr, clientPort):
+        fst = False
         if not color in self.metrics:
+            fst = True
             self.killSessions[color] = False
             self.metrics[color] = {}
+            self.metrics[color]['delays'] = []
             self.metrics[color]['lastPrinted'] = -10000
             self.metrics[color]['first'] = int(packetID)
-            self.metrics[color]['lastTime'] = time
+            self.metrics[color]['lastTime'] = time.time()
+            self.metrics[color]['now'] = time.time()
             self.metrics[color]['curr'] = int(packetID)
             self.metrics[color]['lost'] = 0
+            self.metrics[color]['nPackets'] = 1
 
             if not addr[0] in self.outIps:
                 t = threading.Thread(target=self.clientHandler, args=(color,(addr[0],clientPort),))
                 t.start()
                 self.outIps.append(addr[0])
         else:
-            self.metrics[color]['lastTime'] = time
+            self.metrics[color]['nPackets'] += 1
+            self.metrics[color]['now'] = time.time()
             self.metrics[color]['last'] = self.metrics[color]['curr']
             self.metrics[color]['curr'] = int(packetID)
             self.metrics[color]['lost'] += self.metrics[color]['curr'] - self.metrics[color]['last'] - 1
 
         if self.metrics[color]['curr'] - self.metrics[color]['lastPrinted'] >= printInterval:
+            dif = 0
+            if not fst: 
+                dif = self.metrics[color]['nPackets']/(self.metrics[color]['now']-self.metrics[color]['lastTime'])
             self.metrics[color]['lastPrinted'] = self.metrics[color]['curr']
-            lossPerc = self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
+            lossPerc = 100*self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
+            
             print("Player", color, "current packetID: ", packetID)
             print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , round(lossPerc,2) , "%)\n") 
-    
+            print(f"        {round(dif,2)} packets/s") 
+            if len(self.metrics[color]['delays'] > 0):
+                print(f"        average delay: {round(sum(self.metrics[color]['delays'])/len(self.metrics[color]['delays']))} ms")
+            
+            self.metrics[color]['nPackets'] = 0
+            self.metrics[color]['lastTime'] = self.metrics[color]['now']
+            self.metrics[color]['delays'] = []
+
     
     #Generates the message to send to a client
     def generateMessage(self, packetID):
-        b = bytearray(struct.pack('!hh',packetID,len(self.players.keys()))) 
+        b = bytearray(struct.pack('!Hfh',packetID,time.time(),len(self.players.keys()))) 
 
         for p in self.players.keys():
             b += self.players[p].toBytes()
