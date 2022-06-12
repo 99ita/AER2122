@@ -110,7 +110,6 @@ class NetworkClient():
             except:
                 break
     
-
     def serverListener(self):
         print("Server listener thread started...\n")
         fst = True
@@ -253,7 +252,8 @@ class NetworkServer():
     
     #Generates the message to send to a client
     def generateMessage(self, packetID):
-        b = bytearray(struct.pack('!Hfh',packetID,time.time(),len(self.players.keys()))) 
+        currTime = time.time()
+        b = bytearray(struct.pack('!Hfh',packetID,currTime,len(self.players.keys()))) 
 
         for p in self.players.keys():
             b += self.players[p].toBytes()
