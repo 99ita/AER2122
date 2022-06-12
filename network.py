@@ -165,9 +165,10 @@ class NetworkServer():
 
             playerArr = data[4:21]
             p = util.sPlayer(playerArr,addr)
-            if packetID < self.metrics[p.color]['curr']:
-                print("Old packet received, droping!")
-                continue
+            if p.color in self.metrics: 
+                if packetID < self.metrics[p.color]['curr']:
+                    print("Old packet received, droping!")
+                    continue
 
             self.players[p.color] = p
             self.shots[p.color] = []
