@@ -204,15 +204,15 @@ class Forwarder():
                 exit()
 
 
-            sizeC, = struct.unpack("I", data[:4])
-            clientIp = data[4:sizeC+4].decode('utf-8')
+            sizeC, = struct.unpack("h", data[:2])
+            clientIp = data[2:sizeC+2].decode('utf-8')
                 
             if self.gw:
-                sizeS, = struct.unpack("I", data[sizeC+4:sizeC+8])
+                sizeS, = struct.unpack("h", data[sizeC+2:sizeC+4])
         
-                serverIp = data[sizeC+8:sizeC+sizeS+8].decode('utf-8')
-                serverPort, = struct.unpack("I", data[sizeC+sizeS+8:sizeC+sizeS+12])
-                data = data[sizeC+sizeS+12:]
+                serverIp = data[sizeC+4:sizeC+sizeS+4].decode('utf-8')
+                serverPort, = struct.unpack("H", data[sizeC+sizeS+4:sizeC+sizeS+6])
+                data = data[sizeC+sizeS+6:]
 
                 serverPair = (serverIp,serverPort)
 
@@ -256,9 +256,9 @@ class Forwarder():
             if fst: #DTN Header: I src_ip I dst_ip dst_port
                 s1 = self.nodeIP.encode('utf-8')
                 s2 = server_pair[0].encode('utf-8')
-                header = struct.pack(f"I{len(s1)}s",len(s1),s1)
-                header += struct.pack(f"I{len(s2)}s",len(s2),s2)
-                header += struct.pack("I",server_pair[1])
+                header = struct.pack(f"h{len(s1)}s",len(s1),s1)
+                header += struct.pack(f"h{len(s2)}s",len(s2),s2)
+                header += struct.pack("H",server_pair[1])
                 data = header + data
 
             nextHop = self.neighbours.best_neighbour_addr()
