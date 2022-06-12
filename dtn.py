@@ -59,11 +59,11 @@ class Neighbours():
 
             newBest = self.best_neighbour_addr()
 
-            if not self.fwd.clearingQueue:
+            '''if not self.fwd.clearingQueue:
                 self.fwd.clearingQueue = True
                 self.fwd.clear_queue(newBest)
-                self.fwd.clearingQueue = False
-                
+                self.fwd.clearingQueue = False'''
+
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
                 if self.curr_best_neighbour != None:
@@ -272,11 +272,9 @@ class Forwarder():
                 nextHop = None
             if nextHop:
                 try:
-                    if not self.clearingQueue:
-                        self.clearingQueue = True
-                        self.clear_queue(nextHop)
-                        self.clearingQueue = False
-
+                    
+                    self.clear_queue(nextHop)
+                        
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
                     print(f"[Forwarder] Sending packet to best neighbour ({nextHop}) ({data})\n")
                 except:
