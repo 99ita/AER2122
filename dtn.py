@@ -51,9 +51,9 @@ class Neighbours():
         while True:
             if not self.gw:
                 self.score = round((self.gateway_count*100 + self.gwon_count*10)/(time.time()-self.fstTime))
-            data = struct.pack("i",self.gwOn)
-            data += struct.pack("i",self.score)
-            data += struct.pack("I%ds" % (len(s),), len(s), s)
+            data = struct.pack("h",self.gwOn)
+            data += struct.pack("h",self.score)
+            data += struct.pack("h%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
             self.fwd.clearingQueue = True
 
@@ -77,9 +77,9 @@ class Neighbours():
         while True:
             data, addr = self.sock.recvfrom(1024)
 
-            gwon,c = struct.unpack("ii",data[:8])
+            gwon,c = struct.unpack("hh",data[:8])
             data = data[8:]
-            (i,), data = struct.unpack("I", data[:4]), data[4:]
+            (i,), data = struct.unpack("h", data[:4]), data[4:]
             neighbour_ip = data[:i].decode('utf-8')
             if not neighbour_ip in self.neighbours:
                 self.neighbours[neighbour_ip] = {}

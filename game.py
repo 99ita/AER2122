@@ -50,12 +50,7 @@ class Shot():
     #Creates a string to be sent to the server
     def toBytes(self):
         return bytearray(struct.pack('!fffhh?',self.x,self.y,self.ang,util.encode_color(self.color),self.id,self.kill))
-        '''if self.kill:
-            k = ",1"
-        else:
-            k = ',0'
-        return str(self.x) + ',' + str(self.y) + ',' + str(self.ang) + ',' + str(util.encode_color(self.color)) + ',' + str(self.id) + k + ':'
-        '''
+        
 
     #Entity movement logic
     def move(self):
