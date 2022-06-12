@@ -77,9 +77,9 @@ class Neighbours():
         while True:
             data, addr = self.sock.recvfrom(1024)
 
-            gwon,c = struct.unpack("hh",data[:8])
-            data = data[8:]
-            (i,), data = struct.unpack("h", data[:4]), data[4:]
+            gwon,c = struct.unpack("hh",data[:4])
+            data = data[4:]
+            (i,), data = struct.unpack("h", data[:2]), data[2:]
             neighbour_ip = data[:i].decode('utf-8')
             if not neighbour_ip in self.neighbours:
                 self.neighbours[neighbour_ip] = {}
