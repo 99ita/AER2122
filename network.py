@@ -176,6 +176,7 @@ class NetworkServer():
             playerArr = data[6:23]
             p = util.sPlayer(playerArr,addr)
             if p.color in self.metrics: 
+                self.metrics[p.color]['delays'].append(100*(time.time()-timestamp))
                 if packetID < self.metrics[p.color]['curr']:
                     print("Old packet received, droping!")
                     continue
