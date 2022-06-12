@@ -65,7 +65,7 @@ minX, maxX, minY, maxY, nodes, meanSpeed, minDist, meanMovPeriod, maxTime, sdp, 
 print(f"X from {minX} to {maxX}\nY from {minY} to {maxY}")
 print(f"Nodes: {nodes}\nMean speed: {meanSpeed}\nMinimum distance: {minDist}")
 print(f"Mean period between movements: {meanMovPeriod}\nMax time: {maxTime}")
-print(f"Positions standard deviation: {sdp}\nSpeed standard deviation: {sdp}\nTime standard deviation: {sdp}")
+print(f"Positions standard deviation: {sdp}\nSpeed standard deviation: {sds}\nTime standard deviation: {sdt}")
 
 nodesDict = {}
 for n in nodes:
@@ -118,7 +118,7 @@ def generate():
         while nodesDict[n]['time'] < maxTime:
             x = random.normal(loc=center[0],scale=sdp)
             y = random.normal(loc=center[1],scale=sdp)
-            while x > maxX or x < minX or y > maxY or y < minY or dist(nodesDict[n]['lastPos'],(x,y)) < 50:
+            while x > maxX or x < minX or y > maxY or y < minY or dist(nodesDict[n]['lastPos'],(x,y)) < minDist:
                 x = random.normal(loc=center[0],scale=sdp)
                 y = random.normal(loc=center[1],scale=sdp)
 
