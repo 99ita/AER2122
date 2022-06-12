@@ -55,6 +55,7 @@ class Neighbours():
             data += struct.pack("i",self.score)
             data += struct.pack("I%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
+            self.fwd.clearingQueue = True
             self.fwd.clear_queue()
 
             newBest = self.best_neighbour_addr()
@@ -172,6 +173,8 @@ class Forwarder():
 
         self.gw = gw
 
+        self.clearingQueue = False
+
         if gw:
             self.wireless_clients = {}
             server_listener_thread = threading.Thread(target=self.server_listener)
@@ -286,7 +289,7 @@ class Forwarder():
     def clear_queue(self):
         nextHop = self.neighbours.best_neighbour_addr()
         rem = []
-        if len(self.packetQueue) < 1:
+        if len(self.packetQueue) < 1 or nextHop == None:
             return
         print(f"\n[Forwarder] Atempting to clear packet queue ({len(self.packetQueue)} packets)...")
         for entry in self.packetQueue:
