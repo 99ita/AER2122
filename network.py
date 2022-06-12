@@ -36,7 +36,6 @@ class NetworkClient():
 
     def send(self,player,shots):
         currTime = time.time()
-        print(currTime,time.time())
         message = bytearray(struct.pack('!Hd',self.packetID,currTime)) + player.toBytes()
         for s in shots:
             message += s.toBytes()
@@ -73,9 +72,9 @@ class NetworkClient():
             
             print(f"\nCurrent packetID: {packetID}")
             print(f"        lost {self.metrics['lost']} packets so far ({round(lossPerc,2)}%)") 
-            print(f"        {round(dif,2)} packets/s") 
+            print(f"         {round(dif,2)} packets/s") 
             if len(self.metrics['delays']) > 0:
-                print(f"        average delay: {round(sum(self.metrics['delays'])/len(self.metrics['delays']))} ms")
+                print(f"         average delay: {round(sum(self.metrics['delays'])/len(self.metrics['delays']))} ms")
             
             self.metrics['nPackets'] = 0
             self.metrics['lastTime'] = self.metrics['now']
@@ -242,9 +241,9 @@ class NetworkServer():
             
             print("Player", color, "current packetID: ", packetID)
             print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , round(lossPerc,2) , "%)") 
-            print(f"        {round(dif,2)} packets/s") 
+            print(f"         {round(dif,2)} packets/s") 
             if len(self.metrics[color]['delays']) > 0:
-                print(f"        average delay: {round(sum(self.metrics[color]['delays'])/len(self.metrics[color]['delays']))} ms\n")
+                print(f"         average delay: {round(sum(self.metrics[color]['delays'])/len(self.metrics[color]['delays']))} ms\n")
             
             self.metrics[color]['nPackets'] = 0
             self.metrics[color]['lastTime'] = self.metrics[color]['now']
