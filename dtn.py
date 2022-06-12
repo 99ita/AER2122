@@ -59,10 +59,8 @@ class Neighbours():
 
             newBest = self.best_neighbour_addr()
 
-            '''if not self.fwd.clearingQueue:
-                self.fwd.clearingQueue = True
+            if not self.fwd.clearingQueue:
                 self.fwd.clear_queue(newBest)
-                self.fwd.clearingQueue = False'''
 
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
@@ -267,8 +265,8 @@ class Forwarder():
                 nextHop = None
             if nextHop:
                 try:
-                    
-                    self.clear_queue(nextHop)
+                    if not self.clearingQueue:
+                        self.clear_queue(nextHop)
                         
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
                     print(f"[Forwarder] Sending packet to best neighbour ({nextHop}) ({data})\n")
@@ -292,6 +290,7 @@ class Forwarder():
     def clear_queue(self,nextHop):
         if len(self.packetQueue) < 1 or nextHop == None:
             return
+        self.clearingQueue = True
         rem = []
         print(f"\n[Forwarder] Atempting to clear packet queue ({len(self.packetQueue)} packets)...")
         for entry in self.packetQueue:
@@ -309,6 +308,8 @@ class Forwarder():
             self.packetQueue.remove(entry)
         if len(self.packetQueue) < 1:
             print("[Forwarder] Queue empty!\n")
+
+        self.clearingQueue = False
 
 
 
