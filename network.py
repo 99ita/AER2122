@@ -277,8 +277,8 @@ class NetworkServer():
             if self.killSessions[color]:
                 break
             
-            currTime = datetime.utcnow()
-            if (currTime-self.metrics[color]['lastTime']).total_seconds() > self.timeout:
+            currTime = time.time()
+            if (currTime-self.metrics[color]['lastTime']) > self.timeout:
                 del self.players[color]
                 del self.shots[color]
                 del self.metrics[color]
