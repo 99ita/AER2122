@@ -117,6 +117,9 @@ class NetworkClient():
                 playersBArr = data[4:4+(17*nJogs)]
                 shotsBArr = data[4+(17*nJogs):]
                 
+                if packetID < self.metrics['curr']:
+                    print("Old packet received, droping!")
+                    continue
                 fst = self.sessionControl(fst,packetID)
 
                 self.resolvePlayers(playersBArr)
@@ -162,8 +165,11 @@ class NetworkServer():
 
             playerArr = data[4:21]
             p = util.sPlayer(playerArr,addr)
-            self.players[p.color] = p
+            if packetID < self.metrics[p.color]['curr']:
+                print("Old packet received, droping!")
+                continue
 
+            self.players[p.color] = p
             self.shots[p.color] = []
 
             fst = 21
