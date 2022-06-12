@@ -119,7 +119,7 @@ class NetworkClient():
             while True:
                 data,addr = self.inSocket.recvfrom(1024)
                 packetID,timestamp,nJogs = struct.unpack("!Hfh",data[:8])
-                print(time.time()-timestamp)
+                print(time.time(),timestamp)
                 self.metrics['delays'].append(100*(time.time()-timestamp))
                 playersBArr = data[8:8+(17*nJogs)]
                 shotsBArr = data[8+(17*nJogs):]
