@@ -118,10 +118,11 @@ class NetworkClient():
         try:
             while True:
                 data,addr = self.inSocket.recvfrom(1024)
-                packetID,timestamp,nJogs = struct.unpack("!Hfh",data[:4])
+                packetID,timestamp,nJogs = struct.unpack("!Hfh",data[:8])
+                print(time.time()-timestamp)
                 self.metrics['delays'].append(100*(time.time()-timestamp))
-                playersBArr = data[4:4+(17*nJogs)]
-                shotsBArr = data[4+(17*nJogs):]
+                playersBArr = data[8:8+(17*nJogs)]
+                shotsBArr = data[8+(17*nJogs):]
 
                 
                 
@@ -240,10 +241,10 @@ class NetworkServer():
             lossPerc = 100*self.metrics[color]['lost']/(self.metrics[color]['curr'] - self.metrics[color]['first'] + 1)
             
             print("Player", color, "current packetID: ", packetID)
-            print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , round(lossPerc,2) , "%)\n") 
+            print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , round(lossPerc,2) , "%)") 
             print(f"        {round(dif,2)} packets/s") 
             if len(self.metrics[color]['delays']) > 0:
-                print(f"        average delay: {round(sum(self.metrics[color]['delays'])/len(self.metrics[color]['delays']))} ms")
+                print(f"        average delay: {round(sum(self.metrics[color]['delays'])/len(self.metrics[color]['delays']))} ms\n")
             
             self.metrics[color]['nPackets'] = 0
             self.metrics[color]['lastTime'] = self.metrics[color]['now']
