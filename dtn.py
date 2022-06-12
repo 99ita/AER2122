@@ -56,9 +56,14 @@ class Neighbours():
             data += struct.pack("I%ds" % (len(s),), len(s), s)
             self.sock.sendto(data, neighbour_mcast)
             self.fwd.clearingQueue = True
-            self.fwd.clear_queue()
 
             newBest = self.best_neighbour_addr()
+
+            if not self.fwd.clearingQueue:
+                self.fwd.clearingQueue = True
+                self.fwd.clear_queue(newBest)
+                self.fwd.clearingQueue = False
+                
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
                 if self.curr_best_neighbour != None:
@@ -267,6 +272,11 @@ class Forwarder():
                 nextHop = None
             if nextHop:
                 try:
+                    if not self.clearingQueue:
+                        self.clearingQueue = True
+                        self.clear_queue(nextHop)
+                        self.clearingQueue = False
+
                     self.outSocket.sendto(data,(nextHop,util.mobilePort))
                     print(f"[Forwarder] Sending packet to best neighbour ({nextHop}) ({data})\n")
                 except:
@@ -286,11 +296,10 @@ class Forwarder():
                 self.packetQueue.append(pktEntry)
                 return
 
-    def clear_queue(self):
-        nextHop = self.neighbours.best_neighbour_addr()
-        rem = []
+    def clear_queue(self,nextHop):
         if len(self.packetQueue) < 1 or nextHop == None:
             return
+        rem = []
         print(f"\n[Forwarder] Atempting to clear packet queue ({len(self.packetQueue)} packets)...")
         for entry in self.packetQueue:
             success = False
