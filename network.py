@@ -73,7 +73,7 @@ class NetworkClient():
             print(f"\nCurrent packetID: {packetID}")
             print(f"        lost {self.metrics['lost']} packets so far ({round(lossPerc,2)}%)") 
             print(f"        {round(dif,2)} packets/s") 
-            if len(self.metrics['delays'] > 0):
+            if len(self.metrics['delays']) > 0:
                 print(f"        average delay: {round(sum(self.metrics['delays'])/len(self.metrics['delays']))} ms")
             
             self.metrics['nPackets'] = 0
@@ -243,7 +243,7 @@ class NetworkServer():
             print("Player", color, "current packetID: ", packetID)
             print("        ", "lost ", self.metrics[color]['lost'], " packets so far (" , round(lossPerc,2) , "%)\n") 
             print(f"        {round(dif,2)} packets/s") 
-            if len(self.metrics[color]['delays'] > 0):
+            if len(self.metrics[color]['delays']) > 0:
                 print(f"        average delay: {round(sum(self.metrics[color]['delays'])/len(self.metrics[color]['delays']))} ms")
             
             self.metrics[color]['nPackets'] = 0
