@@ -1,7 +1,6 @@
 import struct
 import traceback
 import socket
-from datetime import datetime
 import threading
 import util
 import pygame as pg
