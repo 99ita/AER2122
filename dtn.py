@@ -6,7 +6,7 @@ import util
 import traceback
 
 neighbour_mcast = ("ff02::abcd:1",8080)
-beacon_period = 0.5
+beacon_period = 0.1
 print_period = 5
 
 
@@ -89,7 +89,6 @@ class Neighbours():
                 if c != -1:
                     if gwon >= 1:
                         self.gwon_count += 1
-                        print(self.gwon_count)
                     print(f"[Neighbours] Neighbour at {neighbour_ip} connected ({c}/{gwon})!\n")
                 else:
                     self.gwOn += 1
