@@ -63,10 +63,10 @@ class Neighbours():
 
             if self.curr_best_neighbour != newBest:
                 self.curr_best_neighbour = newBest
-                if self.curr_best_neighbour != None:
+                '''if self.curr_best_neighbour != None:
                     print(f"\n[Neighbours] Current best neighbour {self.curr_best_neighbour} ({self.neighbours[self.curr_best_neighbour]['score']}/{self.neighbours[self.curr_best_neighbour]['gw_on']})!\n")
                 else:
-                    print(f"\n[Neighbours] No better neighbours ({self.score}/{self.gwOn})!\n")          
+                    print(f"\n[Neighbours] No better neighbours ({self.score}/{self.gwOn})!\n") '''         
                 
             time.sleep(self.beacon_period)
 
@@ -86,10 +86,10 @@ class Neighbours():
                 if c != -1:
                     if gwon >= 1:
                         self.gwon_count += 1
-                    print(f"[Neighbours] Neighbour at {neighbour_ip} connected ({c}/{gwon})!\n")
+                    #print(f"[Neighbours] Neighbour at {neighbour_ip} connected ({c}/{gwon})!\n")
                 else:
                     self.gwOn += 1
-                    print(f"[Neighbours] Gateway router at {neighbour_ip} connected!\n")
+                    #print(f"[Neighbours] Gateway router at {neighbour_ip} connected!\n")
 
             if c == -1 and not self.gw:
                 self.gateway_count += 1
@@ -105,9 +105,10 @@ class Neighbours():
         for addr in self.neighbours.keys():
             if time.time() - self.neighbours[addr]["time"] >= 1.5*self.beacon_period:
                 if self.neighbours[addr]["score"] != -1:
-                    print(f"[Neighbours] Neighbour at {addr} timed out!\n")
+                    pass
+                    #print(f"[Neighbours] Neighbour at {addr} timed out!\n")
                 else:
-                    print(f"[Neighbours] Gateway router at {addr} timed out!\n")
+                    #print(f"[Neighbours] Gateway router at {addr} timed out!\n")
                     self.gwOn -= 1
 
                 to.append(addr)
