@@ -6,7 +6,7 @@ import util
 import traceback
 
 neighbour_mcast = ("ff02::abcd:1",8080)
-beacon_period = 0.5
+beacon_period = 0.1
 print_period = 5
 
 
