@@ -37,7 +37,7 @@ class NetworkClient():
     def send(self,player,shots):
         currTime = time.time()
         print(currTime,time.time())
-        message = bytearray(struct.pack('!Hf',self.packetID,currTime)) + player.toBytes()
+        message = bytearray(struct.pack('!Hd',self.packetID,currTime)) + player.toBytes()
         for s in shots:
             message += s.toBytes()
         
@@ -119,7 +119,7 @@ class NetworkClient():
         try:
             while True:
                 data,addr = self.inSocket.recvfrom(1024)
-                packetID,timestamp,nJogs = struct.unpack("!Hfh",data[:8])
+                packetID,timestamp,nJogs = struct.unpack("!Hdh",data[:8])
                 print(time.time(),timestamp)
                 self.metrics['delays'].append(100*(time.time()-timestamp))
                 playersBArr = data[8:8+(17*nJogs)]
@@ -172,7 +172,7 @@ class NetworkServer():
                 self.inSocket.close()
                 print("Server timed out!")
                 exit()
-            packetID,timestamp = struct.unpack('!Hf',data[:6])
+            packetID,timestamp = struct.unpack('!Hd',data[:6])
 
             playerArr = data[6:23]
             p = util.sPlayer(playerArr,addr)
@@ -255,7 +255,7 @@ class NetworkServer():
     #Generates the message to send to a client
     def generateMessage(self, packetID):
         currTime = time.time()
-        b = bytearray(struct.pack('!Hfh',packetID,currTime,len(self.players.keys()))) 
+        b = bytearray(struct.pack('!Hdh',packetID,currTime,len(self.players.keys()))) 
 
         for p in self.players.keys():
             b += self.players[p].toBytes()
