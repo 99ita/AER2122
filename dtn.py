@@ -6,7 +6,7 @@ import util
 import traceback
 
 neighbour_mcast = ("ff02::abcd:1",8080)
-beacon_period = 0.1
+beacon_period = 0.5
 print_period = 5
 
 
@@ -90,11 +90,7 @@ class Neighbours():
                     if gwon >= 1:
                         self.gwon_count += 1
                         print(self.gwon_count)
-                    if gwon == 1:
-                        gateway = 'gateway'
-                    else:
-                        gateway = 'gateways'
-                    print(f"[Neighbours] Neighbour at {neighbour_ip} connected with a score of {c} and connected to {gwon} {gateway}!\n")
+                    print(f"[Neighbours] Neighbour at {neighbour_ip} connected ({c}/{gwon})!\n")
                 else:
                     self.gwOn += 1
                     print(f"[Neighbours] Gateway router at {neighbour_ip} connected!\n")
