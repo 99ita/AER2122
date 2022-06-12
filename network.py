@@ -120,8 +120,7 @@ class NetworkClient():
             while True:
                 data,addr = self.inSocket.recvfrom(1024)
                 packetID,timestamp,nJogs = struct.unpack("!Hdh",data[:12])
-                print(100*(time.time()-timestamp))
-                self.metrics['delays'].append(100*(time.time()-timestamp))
+                self.metrics['delays'].append(1000*(time.time()-timestamp))
                 playersBArr = data[12:12+(17*nJogs)]
                 shotsBArr = data[12+(17*nJogs):]
 
@@ -177,8 +176,7 @@ class NetworkServer():
             playerArr = data[10:27]
             p = util.sPlayer(playerArr,addr)
             if p.color in self.metrics: 
-                print(100*(time.time()-timestamp))
-                self.metrics[p.color]['delays'].append(100*(time.time()-timestamp))
+                self.metrics[p.color]['delays'].append(1000*(time.time()-timestamp))
                 if packetID < self.metrics[p.color]['curr']:
                     print("Old packet received, droping!")
                     continue
