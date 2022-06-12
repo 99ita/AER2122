@@ -35,7 +35,9 @@ class NetworkClient():
             
 
     def send(self,player,shots):
-        message = bytearray(struct.pack('!Hf',self.packetID,time.time())) + player.toBytes()
+        currTime = time.time()
+        print(currTime,time.time())
+        message = bytearray(struct.pack('!Hf',self.packetID,currTime)) + player.toBytes()
         for s in shots:
             message += s.toBytes()
         
